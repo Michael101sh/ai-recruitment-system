@@ -105,9 +105,10 @@ const RankingCard: React.FC<{ ranking: Ranking; index: number; variant: 'approve
 
 interface RankingDashboardProps {
   onRankingComplete?: () => void;
+  totalCandidates?: number;
 }
 
-export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingComplete }) => {
+export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingComplete, totalCandidates: totalCandidatesInSystem }) => {
   const [interviewList, setInterviewList] = useState<InterviewListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRanking, setIsRanking] = useState(false);
@@ -229,7 +230,13 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
             </span>
           )}
           <span className="ml-auto flex items-center gap-3">
-            <span className="font-bold text-gray-900">{totalCandidates} ranked</span>
+            <span className="font-bold text-gray-900">
+              {totalCandidates} ranked
+              {totalCandidatesInSystem != null && (
+                <span className="font-normal text-gray-400"> from {totalCandidatesInSystem}</span>
+              )}
+            </span>
+            <span className="text-gray-300">|</span>
             <span className="font-bold text-emerald-600">{totalApproved} interview</span>
             <span className="font-bold text-red-500">{totalRejected} rejected</span>
           </span>

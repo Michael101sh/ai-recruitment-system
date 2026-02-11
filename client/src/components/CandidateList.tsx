@@ -1,8 +1,22 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import { cn } from '../utils/cn';
 import type { Candidate } from '../types';
+
+/**
+ * Filters candidates by a search query across name, email, and skills
+ */
+const filterCandidates = (candidates: Candidate[], query: string): Candidate[] => {
+  if (!query.trim()) return candidates;
+  const lower = query.toLowerCase().trim();
+  return candidates.filter((c) => {
+    const fullName = `${c.firstName} ${c.lastName}`.toLowerCase();
+    const email = c.email.toLowerCase();
+    const skills = c.skills.map((s) => s.skill.name.toLowerCase()).join(' ');
+    return fullName.includes(lower) || email.includes(lower) || skills.includes(lower);
+  });
+};
 
 interface CandidateListProps {
   candidates: Candidate[];
@@ -46,6 +60,8 @@ export const CandidateList: React.FC<CandidateListProps> = ({
   onRefresh,
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const filtered = useMemo(() => filterCandidates(candidates, search), [candidates, search]);
 
   if (candidates.length === 0) {
     return (
@@ -74,23 +90,63 @@ export const CandidateList: React.FC<CandidateListProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Header bar */}
-      <div className="flex-shrink-0 flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-gray-900">All Candidates</h2>
-          <span className="badge bg-violet-100 text-violet-700">{candidates.length}</span>
+      <div className="flex-shrink-0 mb-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-gray-900">All Candidates</h2>
+            <span className="badge bg-violet-100 text-violet-700">{candidates.length}</span>
+          </div>
+          <button type="button" onClick={onRefresh} className="btn-secondary text-sm flex items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+            </svg>
+            Refresh
+          </button>
         </div>
-        <button type="button" onClick={onRefresh} className="btn-secondary text-sm flex items-center gap-1.5">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
-          Refresh
-        </button>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input-field !pl-9 !py-2 text-sm"
+            placeholder="Search by name, email, or skill..."
+            aria-label="Search candidates"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Clear search"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {search && (
+          <p className="text-xs text-gray-500">
+            Showing {filtered.length} of {candidates.length} candidates
+          </p>
+        )}
       </div>
 
       {/* Candidate Cards */}
       <div className="flex-1 overflow-y-auto pr-1">
+        {filtered.length === 0 && search ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            <p className="text-sm text-gray-500">No candidates match "<span className="font-medium text-gray-700">{search}</span>"</p>
+          </div>
+        ) : (
         <div className="space-y-4">
-        {candidates.map((candidate, index) => {
+        {filtered.map((candidate, index) => {
           const score = getLatestScore(candidate);
           const scoreConfig = score !== null ? getScoreConfig(score) : null;
           const isExpanded = expandedId === candidate.id;
@@ -243,6 +299,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
           );
         })}
         </div>
+        )}
       </div>
     </div>
   );
