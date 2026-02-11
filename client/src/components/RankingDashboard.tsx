@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import VirtualList from './VirtualList';
 import { cn } from '../utils/cn';
+import { getApiErrorMessage } from '../utils/apiError';
 import { rankingApi } from '../services/api';
 import type { InterviewListResponse, Ranking } from '../types';
 
@@ -122,7 +123,7 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
       const data = await rankingApi.getInterviewList();
       setInterviewList(data);
     } catch (err) {
-      setError('Failed to load interview list. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to load interview list. Please try again.'));
       console.error('Error fetching interview list:', err);
     } finally {
       setIsLoading(false);
@@ -141,7 +142,7 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
       await handleFetchInterviewList();
       onRankingComplete?.();
     } catch (err) {
-      setError('Failed to rank candidates. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to rank candidates. Please try again.'));
       console.error('Error ranking candidates:', err);
     } finally {
       setIsRanking(false);

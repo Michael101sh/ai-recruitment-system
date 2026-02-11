@@ -1,8 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
 
-import { prisma } from '../services/prismaService';
+import { candidateRepository } from '../dal/candidateRepository';
+import { rankingRepository } from '../dal/rankingRepository';
 import { rankCandidates } from '../services/claudeService';
 import { logger } from '../utils/logger';
+import { NotFoundError } from '../utils/AppError';
+import { PaginationSchema } from '../types';
+import type { RankCandidatesInput } from '../types';
 
 /**
  * Ranks all candidates in the system against given criteria using Claude AI.
@@ -11,21 +15,16 @@ import { logger } from '../utils/logger';
 export const rankAllCandidates = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const criteria: string = req.body.criteria || 'Software Engineering Position';
+    const { criteria }: RankCandidatesInput = req.body;
 
-    // Fetch all candidates with their skills
-    const candidates = await prisma.candidate.findMany({
-      include: {
-        skills: { include: { skill: true } },
-      },
-    });
+    // Fetch all candidates with their skills via the DAL
+    const candidates = await candidateRepository.findAllWithSkills();
 
     if (candidates.length === 0) {
-      res.status(404).json({ error: { message: 'No candidates found in the system' } });
-      return;
+      throw new NotFoundError('No candidates found in the system');
     }
 
     // Prepare candidate data for AI ranking
@@ -36,52 +35,76 @@ export const rankAllCandidates = async (
       skills: c.skills.map((cs) => cs.skill.name),
     }));
 
-    // Get AI rankings
-    const aiRankings = await rankCandidates(candidateData, criteria);
+    // Build a lookup of valid candidate IDs and a name map for fallback messages
+    const candidateIdSet = new Set(candidates.map((c) => c.id));
+    const candidateNameMap = new Map(
+      candidates.map((c) => [c.id, `${c.firstName} ${c.lastName}`]),
+    );
+
+    // Get AI rankings — retry once if any candidates are missing
+    let aiRankings = await rankCandidates(candidateData, criteria);
+    let rankedIds = new Set(
+      aiRankings.filter((r) => candidateIdSet.has(r.id)).map((r) => r.id),
+    );
+
+    if (rankedIds.size < candidates.length) {
+      const missingNames = candidates
+        .filter((c) => !rankedIds.has(c.id))
+        .map((c) => `${c.firstName} ${c.lastName}`);
+      logger.warn(
+        `AI missed ${missingNames.length} candidate(s) on first attempt: ${missingNames.join(', ')}. Retrying…`,
+      );
+
+      const retryRankings = await rankCandidates(candidateData, criteria);
+      // Merge: use retry results for any IDs missing from the first run
+      for (const r of retryRankings) {
+        if (candidateIdSet.has(r.id) && !rankedIds.has(r.id)) {
+          aiRankings.push(r);
+          rankedIds.add(r.id);
+        }
+      }
+    }
+
+    // Fallback: assign a default ranking for any candidates still missing
+    for (const c of candidates) {
+      if (!rankedIds.has(c.id)) {
+        logger.warn(
+          `Candidate ${candidateNameMap.get(c.id)} (${c.id}) missed by AI after retry — assigning fallback ranking`,
+        );
+        aiRankings.push({
+          id: c.id,
+          score: 0,
+          reasoning: 'Could not be evaluated by AI — please re-run ranking.',
+          shouldInterview: false,
+        });
+      }
+    }
 
     // Delete all previous rankings before saving new ones
-    await prisma.ranking.deleteMany();
-
-    // Build a lookup set of valid candidate IDs for fast validation
-    const candidateIdSet = new Set(candidates.map((c) => c.id));
+    await rankingRepository.deleteAll();
 
     // Save rankings to database with priority = index + 1
-    const savedRankings: Array<Awaited<ReturnType<typeof prisma.ranking.create>>> = [];
+    const savedRankings: Array<Awaited<ReturnType<typeof rankingRepository.create>>> = [];
     let priority = 1;
 
     for (const ranking of aiRankings) {
-      // Skip if Claude returned an ID we don't recognize
+      // Skip if Claude returned an ID we don't recognise
       if (!candidateIdSet.has(ranking.id)) {
         logger.warn(`Skipping unknown candidate ID from AI: ${ranking.id}`);
         continue;
       }
 
-      const saved = await prisma.ranking.create({
-        data: {
-          candidateId: ranking.id,
-          score: ranking.score,
-          reasoning: ranking.reasoning,
-          criteria,
-          shouldInterview: ranking.shouldInterview,
-          priority,
-        },
-        include: {
-          candidate: {
-            include: { skills: { include: { skill: true } } },
-          },
-        },
+      const saved = await rankingRepository.create({
+        candidateId: ranking.id,
+        score: ranking.score,
+        reasoning: ranking.reasoning,
+        criteria,
+        shouldInterview: ranking.shouldInterview,
+        priority,
       });
 
       savedRankings.push(saved);
       priority++;
-    }
-
-    // If some candidates were missed by the AI, log a warning
-    if (savedRankings.length < candidates.length) {
-      logger.warn(
-        `AI ranked ${savedRankings.length}/${candidates.length} candidates. ` +
-        `Missing IDs will not have rankings.`
-      );
     }
 
     res.status(200).json({ data: savedRankings });
@@ -91,24 +114,19 @@ export const rankAllCandidates = async (
 };
 
 /**
- * Retrieves all rankings with candidate details, ordered by priority ascending
+ * Retrieves all rankings with candidate details, ordered by priority ascending.
+ * Supports optional pagination via `?page=1&limit=50` query params.
  */
 export const getRankings = async (
-  _req: Request,
+  req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const rankings = await prisma.ranking.findMany({
-      include: {
-        candidate: {
-          include: { skills: { include: { skill: true } } },
-        },
-      },
-      orderBy: { priority: 'asc' },
-    });
+    const { page, limit } = PaginationSchema.parse(req.query);
+    const result = await rankingRepository.findAll({ page, limit });
 
-    res.status(200).json({ data: rankings });
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -116,36 +134,17 @@ export const getRankings = async (
 
 /**
  * Returns candidates split into two lists: those who should be interviewed
- * (ordered by priority) and those who should not (ordered by score descending)
+ * (ordered by score desc) and those who should not (ordered by score desc).
  */
 export const getInterviewList = async (
   _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const rankings = await prisma.ranking.findMany({
-      include: {
-        candidate: {
-          include: { skills: { include: { skill: true } } },
-        },
-      },
-    });
+    const result = await rankingRepository.findSplitByInterview();
 
-    const shouldInterview = rankings
-      .filter((r) => r.shouldInterview)
-      .sort((a, b) => b.score - a.score);
-
-    const shouldNotInterview = rankings
-      .filter((r) => !r.shouldInterview)
-      .sort((a, b) => b.score - a.score);
-
-    res.status(200).json({
-      data: {
-        shouldInterview,
-        shouldNotInterview,
-      },
-    });
+    res.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }

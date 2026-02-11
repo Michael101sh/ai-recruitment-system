@@ -5,6 +5,7 @@ import { CandidateList } from './components/CandidateList';
 import { RankingDashboard } from './components/RankingDashboard';
 import { candidateApi } from './services/api';
 import { cn } from './utils/cn';
+import { getApiErrorMessage } from './utils/apiError';
 import type { Candidate, BatchGenerationResult } from './types';
 
 type Tab = 'generate' | 'candidates' | 'rankings';
@@ -54,7 +55,7 @@ const App: React.FC = () => {
       const data = await candidateApi.getAll();
       setCandidates(data);
     } catch (err) {
-      setError('Failed to load candidates. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to load candidates. Please try again.'));
       console.error('Error fetching candidates:', err);
     }
   }, []);
@@ -83,7 +84,7 @@ const App: React.FC = () => {
       setCandidates(updated);
       return result;
     } catch (err) {
-      setError('Failed to generate candidates. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to generate candidates. Please try again.'));
       console.error('Error generating candidates:', err);
       throw err;
     } finally {

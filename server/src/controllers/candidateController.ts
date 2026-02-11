@@ -1,18 +1,19 @@
 import type { Request, Response, NextFunction } from 'express';
 
-import { prisma } from '../services/prismaService';
+import { candidateRepository } from '../dal/candidateRepository';
 import { generateCandidateProfiles, generateCV } from '../services/claudeService';
 import { logger } from '../utils/logger';
+import { PaginationSchema } from '../types';
 import type { GenerateCandidatesInput, BatchGenerationResult } from '../types';
 
 /**
  * Uses Claude AI to generate candidate profiles and CVs in bulk.
- * No manual input needed - AI creates realistic candidates from scratch.
+ * No manual input needed — AI creates realistic candidates from scratch.
  */
 export const generateCandidatesWithCVs = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { count }: GenerateCandidatesInput = req.body;
@@ -20,7 +21,7 @@ export const generateCandidatesWithCVs = async (
     // Step 1: Ask Claude to generate fictional candidate profiles
     const profiles = await generateCandidateProfiles(count);
 
-    logger.info(`Generated ${profiles.length} candidate profiles, creating records...`);
+    logger.info(`Generated ${profiles.length} candidate profiles, creating records…`);
 
     // Step 2: For each profile, create the candidate in DB and generate a CV
     const results: BatchGenerationResult['candidates'] = [];
@@ -28,31 +29,20 @@ export const generateCandidatesWithCVs = async (
     for (const profile of profiles) {
       // Ensure email is unique — add a random suffix if it already exists
       let email = profile.email;
-      const existingCandidate = await prisma.candidate.findUnique({ where: { email } });
+      const existingCandidate = await candidateRepository.findByEmail(email);
       if (existingCandidate) {
         const suffix = Math.random().toString(36).substring(2, 7);
         const [localPart, domain] = email.split('@');
         email = `${localPart}+${suffix}@${domain}`;
       }
 
-      const candidate = await prisma.candidate.create({
-        data: {
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          email,
-          phone: profile.phone,
-          yearsOfExp: profile.yearsOfExp,
-          skills: {
-            create: profile.skills.map((skillName) => ({
-              skill: {
-                connectOrCreate: {
-                  where: { name: skillName },
-                  create: { name: skillName, category: 'technical' },
-                },
-              },
-            })),
-          },
-        },
+      const candidate = await candidateRepository.create({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email,
+        phone: profile.phone,
+        yearsOfExp: profile.yearsOfExp,
+        skills: profile.skills,
       });
 
       // Generate a full CV for this candidate
@@ -63,13 +53,11 @@ export const generateCandidatesWithCVs = async (
         skills: profile.skills,
       });
 
-      const cv = await prisma.cV.create({
-        data: {
-          candidateId: candidate.id,
-          content: cvResult.content,
-          prompt: cvResult.prompt,
-          generatedBy: 'claude-sonnet-4',
-        },
+      const cv = await candidateRepository.createCV({
+        candidateId: candidate.id,
+        content: cvResult.content,
+        prompt: cvResult.prompt,
+        generatedBy: 'claude-sonnet-4',
       });
 
       results.push({
@@ -91,24 +79,19 @@ export const generateCandidatesWithCVs = async (
 };
 
 /**
- * Retrieves all candidates with their skills, latest CV, and latest ranking
+ * Retrieves all candidates with their skills, latest CV, and latest ranking.
+ * Supports optional pagination via `?page=1&limit=50` query params.
  */
 export const getAllCandidates = async (
-  _req: Request,
+  req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    const candidates = await prisma.candidate.findMany({
-      include: {
-        skills: { include: { skill: true } },
-        cvs: { orderBy: { createdAt: 'desc' }, take: 1 },
-        rankings: { orderBy: { rankedAt: 'desc' }, take: 1 },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { page, limit } = PaginationSchema.parse(req.query);
+    const result = await candidateRepository.findAll({ page, limit });
 
-    res.status(200).json({ data: candidates });
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

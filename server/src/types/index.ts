@@ -16,10 +16,37 @@ export type CandidateInput = z.infer<typeof CandidateSchema>;
 // ── Batch Generation Schemas ─────────────────────────────────────────
 
 export const GenerateCandidatesSchema = z.object({
-  count: z.number().int().min(1, 'Must generate at least 1 candidate').max(10, 'Maximum 10 candidates at once'),
+  count: z
+    .number()
+    .int()
+    .min(1, 'Must generate at least 1 candidate')
+    .max(10, 'Maximum 10 candidates at once'),
 });
 
 export type GenerateCandidatesInput = z.infer<typeof GenerateCandidatesSchema>;
+
+// ── Ranking Schemas ──────────────────────────────────────────────────
+
+export const RankCandidatesSchema = z.object({
+  criteria: z
+    .string()
+    .max(500, 'Criteria must be 500 characters or fewer')
+    .optional()
+    .default('Software Engineering Position'),
+});
+
+export type RankCandidatesInput = z.infer<typeof RankCandidatesSchema>;
+
+// ── Pagination Schemas ───────────────────────────────────────────────
+
+export const PaginationSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(100),
+});
+
+export type PaginationInput = z.infer<typeof PaginationSchema>;
+
+// ── Generated Profile (from AI) ──────────────────────────────────────
 
 export interface GeneratedCandidateProfile {
   firstName: string;
@@ -66,5 +93,6 @@ export interface ApiErrorResponse {
   error: {
     message: string;
     stack?: string;
+    details?: Array<{ field: string; message: string }>;
   };
 }
