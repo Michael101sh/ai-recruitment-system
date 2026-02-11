@@ -90,7 +90,7 @@ export const generateCV = async (candidateData: {
   yearsOfExp: number;
   skills: string[];
 }): Promise<string> => {
-  const prompt = `Create a professional CV/resume in English for the following candidate.
+  const prompt = `Create a realistic CV/resume in English for the following candidate.
 Format it in a clean, structured manner with clear sections.
 
 Candidate Information:
@@ -98,14 +98,21 @@ Candidate Information:
 - Years of Experience: ${candidateData.yearsOfExp}
 - Skills: ${candidateData.skills.join(', ')}
 
-Generate a complete, professional CV with the following sections:
+IMPORTANT: The CV quality must authentically reflect the candidate's experience level and skills.
+- A candidate with 0-2 years should have a short, entry-level CV with limited experience (internships, personal projects, one junior role at most).
+- A candidate with 3-6 years should have a moderate CV with 2-3 roles showing progression.
+- A candidate with 7+ years should have a strong, detailed CV with multiple senior roles and achievements.
+- If the skills are outdated or niche, the CV should reflect that realistically (e.g., legacy companies, limited modern tech exposure).
+- Do NOT make a weak candidate look strong. The CV should honestly represent the profile.
+
+Generate a complete CV with the following sections:
 1. Contact Information
 2. Professional Summary
 3. Skills (categorized if possible)
-4. Professional Experience (generate realistic entries based on the skills and years of experience)
-5. Education (generate appropriate entries based on the profile)
+4. Professional Experience (realistic entries matching the experience level and skills)
+5. Education (appropriate for the profile)
 
-Make it detailed, professional, and ready for job applications. All content must be in English.`;
+All content must be in English.`;
 
   logger.info(`Generating CV for ${candidateData.firstName} ${candidateData.lastName}`);
 
