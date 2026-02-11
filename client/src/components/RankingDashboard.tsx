@@ -67,9 +67,16 @@ const RankingCard: React.FC<{ ranking: Ranking; index: number; variant: 'approve
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <h4 className="font-semibold text-gray-900 truncate">
-              {ranking.candidate?.firstName} {ranking.candidate?.lastName}
-            </h4>
+            <div className="truncate">
+              <h4 className="font-semibold text-gray-900 inline">
+                {ranking.candidate?.firstName} {ranking.candidate?.lastName}
+              </h4>
+              {ranking.candidate?.email && (
+                <span className="text-xs text-gray-400 ml-1.5">
+                  ({ranking.candidate.email})
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className={cn('text-lg font-bold', config.text)}>
                 {ranking.score}

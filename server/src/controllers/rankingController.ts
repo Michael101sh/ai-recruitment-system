@@ -134,7 +134,7 @@ export const getInterviewList = async (
 
     const shouldInterview = rankings
       .filter((r) => r.shouldInterview)
-      .sort((a, b) => a.priority - b.priority);
+      .sort((a, b) => b.score - a.score);
 
     const shouldNotInterview = rankings
       .filter((r) => !r.shouldInterview)
