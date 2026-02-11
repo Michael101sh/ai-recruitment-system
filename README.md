@@ -14,16 +14,16 @@ Full-stack TypeScript application for automating recruitment workflows:
 - **AI**: Anthropic Claude API (Sonnet 4)
 ```
 
-### Topics/Tags ב-GitHub:
+## Setup
+```bash
+# Backend
+cd server
+npm install
+npx prisma migrate dev
+npm run dev
+
+# Frontend
+cd client
+npm install
+npm run dev
 ```
-typescript
-nodejs
-express
-react
-prisma
-postgresql
-claude-ai
-anthropic
-recruitment
-ai
-fullstack
