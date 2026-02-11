@@ -96,7 +96,11 @@ const RankingCard: React.FC<{ ranking: Ranking; index: number; variant: 'approve
   );
 };
 
-export const RankingDashboard: React.FC = () => {
+interface RankingDashboardProps {
+  onRankingComplete?: () => void;
+}
+
+export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingComplete }) => {
   const [interviewList, setInterviewList] = useState<InterviewListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRanking, setIsRanking] = useState(false);
@@ -127,13 +131,14 @@ export const RankingDashboard: React.FC = () => {
     try {
       await rankingApi.rankAll(criteria || undefined);
       await handleFetchInterviewList();
+      onRankingComplete?.();
     } catch (err) {
       setError('Failed to rank candidates. Please try again.');
       console.error('Error ranking candidates:', err);
     } finally {
       setIsRanking(false);
     }
-  }, [criteria, handleFetchInterviewList]);
+  }, [criteria, handleFetchInterviewList, onRankingComplete]);
 
   const totalApproved = interviewList?.shouldInterview.length ?? 0;
   const totalRejected = interviewList?.shouldNotInterview.length ?? 0;

@@ -182,11 +182,11 @@ export const rankCandidates = async (
   const candidatesList = candidates
     .map(
       (c) =>
-        `- Name: ${c.name}, Experience: ${c.experience} years, Skills: ${c.skills.join(', ')}`
+        `- ID: ${c.id}, Name: ${c.name}, Experience: ${c.experience} years, Skills: ${c.skills.join(', ')}`
     )
     .join('\n');
 
-  const prompt = `You are an expert HR recruiter. Evaluate and rank the following candidates for this position: "${criteria}".
+  const prompt = `You are an expert HR recruiter. Evaluate and rank ALL of the following candidates for this position: "${criteria}".
 
 Candidates:
 ${candidatesList}
@@ -194,7 +194,7 @@ ${candidatesList}
 Return a JSON array (no markdown, no code fences, no extra text) with this exact structure:
 [
   {
-    "name": "Candidate Full Name",
+    "id": "candidate-id-here",
     "score": 85,
     "reasoning": "Brief explanation of the score",
     "shouldInterview": true
@@ -202,9 +202,11 @@ Return a JSON array (no markdown, no code fences, no extra text) with this exact
 ]
 
 Rules:
+- You MUST include ALL ${candidates.length} candidates in your response — do NOT skip any
+- id: Copy the exact ID string from the candidate list above — do NOT modify it
 - score: Integer 1-100 reflecting how well the candidate matches the position
 - shouldInterview: true if score >= 50, false otherwise
-- reasoning: Explain why this candidate received this score
+- reasoning: 1-2 sentences explaining why this candidate received this score
 - Order by score descending
 
 Return ONLY valid JSON. No markdown formatting, no code blocks, no additional text.`;

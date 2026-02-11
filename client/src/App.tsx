@@ -205,7 +205,7 @@ const App: React.FC = () => {
           aria-labelledby="tab-rankings"
           className={activeTab === 'rankings' ? 'animate-fade-in' : 'hidden'}
         >
-          <RankingDashboard />
+          <RankingDashboard onRankingComplete={handleFetchCandidates} />
         </div>
         </div>
       </main>

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 
 import { prisma } from '../services/prismaService';
 import { rankCandidates } from '../services/claudeService';
+import { logger } from '../utils/logger';
 
 /**
  * Ranks all candidates in the system against given criteria using Claude AI.
@@ -38,35 +39,50 @@ export const rankAllCandidates = async (
     // Get AI rankings
     const aiRankings = await rankCandidates(candidateData, criteria);
 
+    // Delete all previous rankings before saving new ones
+    await prisma.ranking.deleteMany();
+
+    // Build a lookup set of valid candidate IDs for fast validation
+    const candidateIdSet = new Set(candidates.map((c) => c.id));
+
     // Save rankings to database with priority = index + 1
-    const savedRankings = await Promise.all(
-      aiRankings.map((ranking, index) => {
-        // Match AI result back to candidate by name
-        const matched = candidates.find(
-          (c) => `${c.firstName} ${c.lastName}` === ranking.name
-        );
+    const savedRankings: Array<Awaited<ReturnType<typeof prisma.ranking.create>>> = [];
+    let priority = 1;
 
-        if (!matched) {
-          throw new Error(`Could not match ranking result for candidate: ${ranking.name}`);
-        }
+    for (const ranking of aiRankings) {
+      // Skip if Claude returned an ID we don't recognize
+      if (!candidateIdSet.has(ranking.id)) {
+        logger.warn(`Skipping unknown candidate ID from AI: ${ranking.id}`);
+        continue;
+      }
 
-        return prisma.ranking.create({
-          data: {
-            candidateId: matched.id,
-            score: ranking.score,
-            reasoning: ranking.reasoning,
-            criteria,
-            shouldInterview: ranking.shouldInterview,
-            priority: index + 1,
+      const saved = await prisma.ranking.create({
+        data: {
+          candidateId: ranking.id,
+          score: ranking.score,
+          reasoning: ranking.reasoning,
+          criteria,
+          shouldInterview: ranking.shouldInterview,
+          priority,
+        },
+        include: {
+          candidate: {
+            include: { skills: { include: { skill: true } } },
           },
-          include: {
-            candidate: {
-              include: { skills: { include: { skill: true } } },
-            },
-          },
-        });
-      })
-    );
+        },
+      });
+
+      savedRankings.push(saved);
+      priority++;
+    }
+
+    // If some candidates were missed by the AI, log a warning
+    if (savedRankings.length < candidates.length) {
+      logger.warn(
+        `AI ranked ${savedRankings.length}/${candidates.length} candidates. ` +
+        `Missing IDs will not have rankings.`
+      );
+    }
 
     res.status(200).json({ data: savedRankings });
   } catch (error) {

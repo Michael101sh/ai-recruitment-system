@@ -50,7 +50,7 @@ export interface BatchGenerationResult {
 // ── Ranking Result from AI ───────────────────────────────────────────
 
 export interface RankingResult {
-  name: string;
+  id: string;
   score: number;
   reasoning: string;
   shouldInterview: boolean;
