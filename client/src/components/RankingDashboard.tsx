@@ -29,15 +29,16 @@ const RankingCard: React.FC<{ ranking: Ranking; index: number; variant: 'approve
   variant,
 }) => {
   const config = getScoreConfig(ranking.score);
-  const medal = variant === 'approved' ? getMedalEmoji(ranking.priority) : null;
-  const medalGradient = variant === 'approved' ? MEDAL_COLORS[ranking.priority] : null;
+  const position = index + 1;
+  const medal = variant === 'approved' ? getMedalEmoji(position) : null;
+  const medalGradient = variant === 'approved' ? MEDAL_COLORS[position] : null;
 
   return (
     <div
       className={cn(
         'group relative glass-card-hover p-4 animate-fade-in',
-        variant === 'approved' && ranking.priority <= 3 && 'ring-1',
-        variant === 'approved' && ranking.priority <= 3 && config.ring,
+        variant === 'approved' && position <= 3 && 'ring-1',
+        variant === 'approved' && position <= 3 && config.ring,
       )}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
     >
@@ -53,7 +54,7 @@ const RankingCard: React.FC<{ ranking: Ranking; index: number; variant: 'approve
             {medal ? (
               <span className="text-xs font-bold leading-none">{medal}</span>
             ) : (
-              <span className="text-sm font-bold">#{ranking.priority}</span>
+              <span className="text-sm font-bold">#{position}</span>
             )}
           </div>
         ) : (

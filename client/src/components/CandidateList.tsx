@@ -4,6 +4,17 @@ import ReactMarkdown from 'react-markdown';
 import { cn } from '../utils/cn';
 import type { Candidate } from '../types';
 
+type SortOption = 'score-desc' | 'score-asc' | 'name-asc' | 'name-desc' | 'exp-desc' | 'exp-asc';
+
+const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
+  { value: 'score-desc', label: 'Score: High to Low' },
+  { value: 'score-asc', label: 'Score: Low to High' },
+  { value: 'name-asc', label: 'Name: A to Z' },
+  { value: 'name-desc', label: 'Name: Z to A' },
+  { value: 'exp-desc', label: 'Experience: Most' },
+  { value: 'exp-asc', label: 'Experience: Least' },
+];
+
 /**
  * Filters candidates by a search query across name, email, and skills
  */
@@ -16,6 +27,38 @@ const filterCandidates = (candidates: Candidate[], query: string): Candidate[] =
     const skills = c.skills.map((s) => s.skill.name.toLowerCase()).join(' ');
     return fullName.includes(lower) || email.includes(lower) || skills.includes(lower);
   });
+};
+
+/**
+ * Sorts candidates by the chosen option
+ */
+const sortCandidates = (candidates: Candidate[], sort: SortOption): Candidate[] => {
+  const sorted = [...candidates];
+  sorted.sort((a, b) => {
+    switch (sort) {
+      case 'score-desc': {
+        const sa = a.rankings[0]?.score ?? -1;
+        const sb = b.rankings[0]?.score ?? -1;
+        return sb - sa;
+      }
+      case 'score-asc': {
+        const sa = a.rankings[0]?.score ?? -1;
+        const sb = b.rankings[0]?.score ?? -1;
+        return sa - sb;
+      }
+      case 'name-asc':
+        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+      case 'name-desc':
+        return `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`);
+      case 'exp-desc':
+        return b.yearsOfExp - a.yearsOfExp;
+      case 'exp-asc':
+        return a.yearsOfExp - b.yearsOfExp;
+      default:
+        return 0;
+    }
+  });
+  return sorted;
 };
 
 interface CandidateListProps {
@@ -61,7 +104,11 @@ export const CandidateList: React.FC<CandidateListProps> = ({
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const filtered = useMemo(() => filterCandidates(candidates, search), [candidates, search]);
+  const [sortBy, setSortBy] = useState<SortOption>('score-desc');
+  const filtered = useMemo(
+    () => sortCandidates(filterCandidates(candidates, search), sortBy),
+    [candidates, search, sortBy]
+  );
 
   if (candidates.length === 0) {
     return (
@@ -103,30 +150,42 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             Refresh
           </button>
         </div>
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-          </svg>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input-field !pl-9 !py-2 text-sm"
-            placeholder="Search by name, email, or skill..."
-            aria-label="Search candidates"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Clear search"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-field !pl-9 !py-2 text-sm"
+              placeholder="Search by name, email, or skill..."
+              aria-label="Search candidates"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="input-field !w-auto !py-2 text-sm text-gray-600 cursor-pointer"
+            aria-label="Sort candidates"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
         {search && (
           <p className="text-xs text-gray-500">
