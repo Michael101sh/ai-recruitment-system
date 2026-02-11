@@ -40,27 +40,44 @@ You are an expert in TypeScript, Node.js, Express.js, Prisma, PostgreSQL, React,
 ## Project Structure
 ```
 project-root/
-├── client/                    # React + Vite
+├── client/                           # Frontend (React + Vite + TypeScript)
 │   ├── src/
-│   │   ├── components/
-│   │   ├── services/
-│   │   ├── types/
-│   │   ├── utils/
-│   │   └── App.tsx
-│   └── package.json
-├── server/                    # Express + Prisma
+│   │   ├── components/              # React components
+│   │   ├── services/                # API calls (axios)
+│   │   ├── types/                   # TypeScript interfaces
+│   │   ├── utils/                   # Helper functions (cn, formatters)
+│   │   └── App.tsx                  # Main app component
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── server/                           # Backend (Express + Prisma + TypeScript)
 │   ├── prisma/
-│   │   └── schema.prisma
+│   │   └── schema.prisma            # Database schema
 │   ├── src/
-│   │   ├── server.ts
+│   │   ├── server.ts                # Entry point
 │   │   ├── routes/
+│   │   │   ├── candidates.ts        # Candidate routes
+│   │   │   └── rankings.ts          # Ranking routes
 │   │   ├── controllers/
+│   │   │   ├── candidateController.ts
+│   │   │   └── rankingController.ts
 │   │   ├── services/
+│   │   │   ├── claudeService.ts     # Claude API integration
+│   │   │   └── prismaService.ts     # Prisma client singleton
 │   │   ├── middleware/
+│   │   │   ├── errorHandler.ts      # Global error handling
+│   │   │   └── validation.ts        # Request validation
 │   │   ├── types/
+│   │   │   └── index.ts             # Shared types
 │   │   └── utils/
-│   ├── .env
-│   └── package.json
+│   │       └── logger.ts            # Logging utility
+│   ├── .env                         # Environment variables (DO NOT COMMIT)
+│   ├── .env.example                 # Template for .env
+│   ├── .gitignore
+│   ├── tsconfig.json
+│   ├── package.json
+│   └── nodemon.json
+│
 └── README.md
 ```
 
