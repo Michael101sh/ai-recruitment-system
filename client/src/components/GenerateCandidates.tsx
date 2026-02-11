@@ -5,7 +5,6 @@ import type { BatchGenerationResult } from '../types';
 
 interface GenerateCandidatesProps {
   onGenerate: (count: number) => Promise<BatchGenerationResult>;
-  isLoading: boolean;
 }
 
 const STEP_MESSAGES = [
@@ -18,15 +17,16 @@ const STEP_MESSAGES = [
 
 export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
   onGenerate,
-  isLoading,
 }) => {
   const [count, setCount] = useState(3);
   const [result, setResult] = useState<BatchGenerationResult | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = useCallback(async () => {
     setResult(null);
     setStepIndex(0);
+    setIsGenerating(true);
 
     const interval = setInterval(() => {
       setStepIndex((prev) => (prev + 1) % STEP_MESSAGES.length);
@@ -37,6 +37,7 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
       setResult(batchResult);
     } finally {
       clearInterval(interval);
+      setIsGenerating(false);
     }
   }, [count, onGenerate]);
 
@@ -44,7 +45,6 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
     <div className="space-y-6">
       {/* ─── Hero Card ─── */}
       <div className="relative overflow-hidden glass-card p-8">
-        {/* Decorative gradient orbs */}
         <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-violet-200/20 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-indigo-200/20 blur-3xl" />
 
@@ -56,9 +56,7 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Generate Candidates with AI
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">Generate Candidates with AI</h2>
               <p className="text-sm text-gray-500">
                 Claude creates realistic profiles with diverse skills, experience, and CVs
               </p>
@@ -71,14 +69,11 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
             </label>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-3">
-                {/* Decrement button */}
                 <button
                   type="button"
                   onClick={() => setCount((prev) => Math.max(1, prev - 1))}
-                  disabled={isLoading || count <= 1}
-                  className="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white
-                             text-gray-500 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-30
-                             transition-all duration-200 active:scale-95"
+                  disabled={isGenerating || count <= 1}
+                  className="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-30 transition-all duration-200 active:scale-95"
                   aria-label="Decrease count"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -93,21 +88,16 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
                   max={10}
                   value={count}
                   onChange={(e) => setCount(Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1)))}
-                  disabled={isLoading}
-                  className="w-16 h-10 text-center text-xl font-bold text-gray-900 input-field !px-2 !py-0
-                             [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none
-                             [&::-webkit-inner-spin-button]:appearance-none"
+                  disabled={isGenerating}
+                  className="w-16 h-10 text-center text-xl font-bold text-gray-900 input-field !px-2 !py-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   aria-label="Number of candidates to generate"
                 />
 
-                {/* Increment button */}
                 <button
                   type="button"
                   onClick={() => setCount((prev) => Math.min(10, prev + 1))}
-                  disabled={isLoading || count >= 10}
-                  className="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white
-                             text-gray-500 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-30
-                             transition-all duration-200 active:scale-95"
+                  disabled={isGenerating || count >= 10}
+                  className="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-30 transition-all duration-200 active:scale-95"
                   aria-label="Increase count"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -119,26 +109,23 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={isLoading}
-                className={cn(
-                  'btn-primary flex items-center gap-2.5 h-10 text-sm',
-                  isLoading && 'shimmer-bg'
-                )}
+                disabled={isGenerating}
+                className={cn('btn-primary flex items-center gap-2.5 h-10 text-sm', isGenerating && 'shimmer-bg')}
                 aria-label={`Generate ${count} candidates with AI`}
               >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin inline-block h-4 w-4 border-2 border-white/30 border-t-white rounded-full" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-                  </svg>
-                  Generate {count} Candidate{count > 1 ? 's' : ''}
-                </>
-              )}
+                {isGenerating ? (
+                  <>
+                    <span className="animate-spin inline-block h-4 w-4 border-2 border-white/30 border-t-white rounded-full" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+                    </svg>
+                    Generate {count} Candidate{count > 1 ? 's' : ''}
+                  </>
+                )}
               </button>
             </div>
             <p className="text-xs text-gray-400 mt-2">Between 1 and 10</p>
@@ -147,15 +134,14 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
       </div>
 
       {/* ─── Loading State ─── */}
-      {isLoading && (
+      {isGenerating && (
         <div className="glass-card p-8 animate-fade-in">
           <div className="flex flex-col items-center text-center py-4">
-            {/* Animated rings */}
-            <div className="relative mb-6">
-              <div className="w-16 h-16 rounded-full border-4 border-violet-100 animate-spin border-t-violet-500" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-6 h-6 text-violet-500 animate-pulse-soft" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            <div className="relative w-16 h-16 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full border-4 border-violet-100 border-t-violet-500 animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
                 </svg>
               </div>
             </div>
@@ -167,7 +153,6 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
               {STEP_MESSAGES[stepIndex]}
             </p>
 
-            {/* Progress bar */}
             <div className="w-full max-w-sm">
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-violet-400 to-violet-600 rounded-full shimmer-bg w-full" />
@@ -179,7 +164,7 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
       )}
 
       {/* ─── Results ─── */}
-      {!isLoading && result && (
+      {!isGenerating && result && (
         <div className="glass-card p-8 animate-fade-in-up">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100">
@@ -199,15 +184,11 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
             {result.candidates.map((candidate, index) => (
               <div
                 key={candidate.candidateId}
-                className="flex items-center gap-4 p-3.5 bg-emerald-50/60 border border-emerald-200/50 rounded-xl
-                           animate-slide-in"
+                className="flex items-center gap-4 p-3.5 bg-emerald-50/60 border border-emerald-200/50 rounded-xl animate-slide-in"
                 style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'backwards' }}
               >
-                {/* Avatar initial */}
                 <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-200/60 flex items-center justify-center">
-                  <span className="text-sm font-bold text-emerald-700">
-                    {candidate.name.charAt(0)}
-                  </span>
+                  <span className="text-sm font-bold text-emerald-700">{candidate.name.charAt(0)}</span>
                 </div>
                 <span className="font-medium text-gray-900 flex-1">{candidate.name}</span>
                 <span className="badge bg-emerald-100 text-emerald-700">

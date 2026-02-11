@@ -1,5 +1,4 @@
 import { useEffect, useCallback } from 'react';
-
 import { GenerateCandidates } from './components/GenerateCandidates';
 import { CandidateList } from './components/CandidateList';
 import { RankingDashboard } from './components/RankingDashboard';
@@ -53,7 +52,6 @@ const App: React.FC = () => {
   const generateMutation = useGenerateCandidates(
     (result) => {
       setSuccess(`Successfully generated ${result.generated} candidates with CVs!`);
-      setActiveTab('candidates', { clearNotifications: false });
     },
     setError,
   );
@@ -141,10 +139,7 @@ const App: React.FC = () => {
           aria-labelledby="tab-generate"
           className={activeTab === 'generate' ? 'flex-1 overflow-y-auto animate-fade-in' : 'hidden'}
         >
-          <GenerateCandidates
-            onGenerate={handleGenerate}
-            isLoading={generateMutation.isPending}
-          />
+          <GenerateCandidates onGenerate={handleGenerate} />
         </div>
 
         <div
