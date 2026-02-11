@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import { cn } from '../utils/cn';
-import { useGenerateFlow } from '../hooks/useGenerateFlow';
-import type { BatchGenerationResult } from '../types';
+import { cn } from '../../utils/cn';
+import { useGenerateFlow } from '../../hooks/generate';
+import type { BatchGenerationResult } from '../../types';
 
 interface GenerateCandidatesProps {
   onGenerate: (count: number) => Promise<BatchGenerationResult>;

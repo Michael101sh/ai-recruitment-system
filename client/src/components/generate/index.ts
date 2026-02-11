@@ -1,0 +1,1 @@
+export { GenerateCandidates } from './GenerateCandidates';

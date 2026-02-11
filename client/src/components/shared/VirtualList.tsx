@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useVirtualList } from '../hooks/useVirtualList';
+import { useVirtualList } from '../../hooks/useVirtualList';
 
 type VirtualListProps<T> = {
   items: T[];

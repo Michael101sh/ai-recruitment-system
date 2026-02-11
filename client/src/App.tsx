@@ -1,9 +1,9 @@
 import { useEffect, useCallback } from 'react';
-import { GenerateCandidates } from './components/GenerateCandidates';
-import { CandidateList } from './components/CandidateList';
-import { RankingDashboard } from './components/RankingDashboard';
-import { NotificationToasts } from './components/NotificationToasts';
-import { useCandidates, useGenerateCandidates } from './hooks/useCandidates';
+import { GenerateCandidates } from './components/generate';
+import { CandidateList } from './components/candidates';
+import { RankingDashboard } from './components/ranking';
+import { NotificationToasts } from './components/shared';
+import { useCandidates, useGenerateCandidates } from './hooks/candidates';
 import { getApiErrorMessage } from './utils/apiError';
 import { useAppStore } from './store/useAppStore';
 import { cn } from './utils/cn';

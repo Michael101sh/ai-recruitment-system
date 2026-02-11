@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-import type { BatchGenerationResult } from '../types';
+import type { BatchGenerationResult } from '../../types';
 
 const STEP_MESSAGES = [
   'Crafting unique candidate personas...',

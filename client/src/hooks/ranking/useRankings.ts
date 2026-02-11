@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { rankingApi } from '../services/api';
-import { getApiErrorMessage } from '../utils/apiError';
-import { candidateKeys, rankingKeys } from './queryKeys';
+import { rankingApi } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiError';
+import { candidateKeys, rankingKeys } from '../queryKeys';
 
 // ── Hooks ──────────────────────────────────────────────────────────────
 

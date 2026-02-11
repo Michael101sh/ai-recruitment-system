@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { candidateApi } from '../services/api';
-import { getApiErrorMessage } from '../utils/apiError';
-import { candidateKeys, rankingKeys } from './queryKeys';
-import type { BatchGenerationResult } from '../types';
+import { candidateApi } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiError';
+import { candidateKeys, rankingKeys } from '../queryKeys';
+import type { BatchGenerationResult } from '../../types';
 
 // ── Hooks ──────────────────────────────────────────────────────────────
 
