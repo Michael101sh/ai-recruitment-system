@@ -129,4 +129,14 @@ export const candidateRepository = {
       },
     });
   },
+
+  /**
+   * Delete a candidate by ID.
+   * Cascade deletes all related records (CVs, skills, rankings) automatically.
+   */
+  async delete(candidateId: string) {
+    return prisma.candidate.delete({
+      where: { id: candidateId },
+    });
+  },
 };

@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown';
 
 import VirtualList from './VirtualList';
 import { cn } from '../utils/cn';
+import { useDeleteCandidate } from '../hooks/useCandidates';
+import { useAppStore } from '../store/useAppStore';
 import type { Candidate } from '../types';
 
 type SortOption = 'score-desc' | 'score-asc' | 'name-asc' | 'name-desc' | 'exp-desc' | 'exp-asc';
@@ -106,9 +108,29 @@ export const CandidateList: React.FC<CandidateListProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('score-desc');
+  const setSuccess = useAppStore((s) => s.setSuccess);
+  const setError = useAppStore((s) => s.setError);
+
+  const deleteMutation = useDeleteCandidate(
+    () => setSuccess('Candidate deleted successfully'),
+    setError,
+  );
+
   const filtered = useMemo(
     () => sortCandidates(filterCandidates(candidates, search), sortBy),
     [candidates, search, sortBy]
+  );
+
+  const handleDelete = useCallback(
+    (candidate: Candidate) => {
+      const confirmed = window.confirm(
+        `Delete ${candidate.firstName} ${candidate.lastName}?\n\nThis will permanently remove the candidate and all related data (CVs, rankings).`,
+      );
+      if (confirmed) {
+        deleteMutation.mutate(candidate.id);
+      }
+    },
+    [deleteMutation],
   );
 
   const renderCandidate = useCallback((candidate: Candidate, index: number) => {
@@ -150,19 +172,35 @@ export const CandidateList: React.FC<CandidateListProps> = ({
                   </p>
                 </div>
 
-                {/* Score badge */}
-                {scoreConfig && score !== null ? (
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={cn('badge', scoreConfig.badge)}>
-                      {score}/100
-                    </span>
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
-                      {scoreConfig.label}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="badge bg-gray-100 text-gray-500">Unranked</span>
-                )}
+                <div className="flex items-start gap-2">
+                  {/* Score badge */}
+                  {scoreConfig && score !== null ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={cn('badge', scoreConfig.badge)}>
+                        {score}/100
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
+                        {scoreConfig.label}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="badge bg-gray-100 text-gray-500">Unranked</span>
+                  )}
+
+                  {/* Delete button */}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(candidate)}
+                    disabled={deleteMutation.isPending}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Delete candidate"
+                    title="Delete candidate"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Experience and Skills row */}

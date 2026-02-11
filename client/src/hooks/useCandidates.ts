@@ -2,13 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { candidateApi } from '../services/api';
 import { getApiErrorMessage } from '../utils/apiError';
+import { candidateKeys, rankingKeys } from './queryKeys';
 import type { BatchGenerationResult } from '../types';
-
-// ── Query keys ───────────────────────────────────────────────────────
-
-export const candidateKeys = {
-  all: ['candidates'] as const,
-};
 
 // ── Hooks ──────────────────────────────────────────────────────────────
 
@@ -33,6 +28,25 @@ export function useGenerateCandidates(
     },
     onError: (err: unknown) => {
       onError?.(getApiErrorMessage(err, 'Failed to generate candidates. Please try again.'));
+    },
+  });
+}
+
+export function useDeleteCandidate(
+  onSuccess?: () => void,
+  onError?: (message: string) => void,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (candidateId: string) => candidateApi.delete(candidateId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: candidateKeys.all });
+      queryClient.invalidateQueries({ queryKey: rankingKeys.all });
+      onSuccess?.();
+    },
+    onError: (err: unknown) => {
+      onError?.(getApiErrorMessage(err, 'Failed to delete candidate. Please try again.'));
     },
   });
 }

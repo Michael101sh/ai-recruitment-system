@@ -41,6 +41,10 @@ export const candidateApi = {
     const response = await api.get<{ data: Candidate[] }>('/candidates');
     return response?.data?.data;
   },
+
+  delete: async (candidateId: string): Promise<void> => {
+    await api.delete(`/candidates/${candidateId}`);
+  },
 };
 
 // ── Ranking API ───────────────────────────────────────────────────────

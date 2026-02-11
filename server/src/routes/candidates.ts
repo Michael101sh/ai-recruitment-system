@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   generateCandidatesWithCVs,
   getAllCandidates,
+  deleteCandidate,
 } from '../controllers/candidateController';
 import { validateBody } from '../middleware/validation';
 import { authenticate } from '../middleware/auth';
@@ -25,5 +26,8 @@ router.post(
   validateBody(GenerateCandidatesSchema),
   generateCandidatesWithCVs,
 );
+
+// DELETE /api/candidates/:id     → delete candidate and all related data
+router.delete('/:id', deleteCandidate);
 
 export default router;

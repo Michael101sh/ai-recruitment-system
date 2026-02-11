@@ -96,3 +96,25 @@ export const getAllCandidates = async (
     next(error);
   }
 };
+
+/**
+ * Deletes a candidate by ID.
+ * Automatically cascades to delete all related CVs, skills, and rankings.
+ */
+export const deleteCandidate = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    await candidateRepository.delete(id);
+
+    logger.info(`Deleted candidate ${id} and all related data`);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};

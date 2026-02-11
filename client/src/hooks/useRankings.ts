@@ -2,14 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { rankingApi } from '../services/api';
 import { getApiErrorMessage } from '../utils/apiError';
-import { candidateKeys } from './useCandidates';
-
-// ── Query keys ───────────────────────────────────────────────────────
-
-export const rankingKeys = {
-  all: ['rankings'] as const,
-  interviewList: () => [...rankingKeys.all, 'interview-list'] as const,
-};
+import { candidateKeys, rankingKeys } from './queryKeys';
 
 // ── Hooks ──────────────────────────────────────────────────────────────
 
