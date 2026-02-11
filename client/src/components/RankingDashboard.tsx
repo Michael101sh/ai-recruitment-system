@@ -279,6 +279,7 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
               )}
               estimateSize={() => 152}
               gap={12}
+              dynamicHeight
               className="pr-1"
             />
           )}
@@ -311,6 +312,7 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
               )}
               estimateSize={() => 152}
               gap={12}
+              dynamicHeight
               className="pr-1"
             />
           )}
