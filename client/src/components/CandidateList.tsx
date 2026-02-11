@@ -237,7 +237,15 @@ export const CandidateList: React.FC<CandidateListProps> = ({
                         <h3 className="text-base font-semibold text-gray-900">
                           {candidate.firstName} {candidate.lastName}
                         </h3>
-                        <p className="text-sm text-gray-500">{candidate.email}</p>
+                        <p className="text-sm text-gray-500">
+                          {candidate.email}
+                          {candidate.phone && (
+                            <>
+                              <span className="ml-2 text-gray-300">|</span>
+                              <span className="ml-2 text-gray-500">{candidate.phone}</span>
+                            </>
+                          )}
+                        </p>
                       </div>
 
                       {/* Score badge */}
