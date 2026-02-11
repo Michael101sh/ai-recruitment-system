@@ -98,9 +98,9 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* ─── Header ─── */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-violet-700 via-purple-600 to-indigo-600">
+      <header className="relative overflow-hidden bg-gradient-to-br from-violet-700 via-purple-600 to-indigo-600 flex-shrink-0">
         {/* Decorative background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
@@ -156,7 +156,8 @@ const App: React.FC = () => {
       </header>
 
       {/* ─── Main Content ─── */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Notification Toasts */}
         {error && (
           <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl animate-fade-in" role="alert">
@@ -206,10 +207,11 @@ const App: React.FC = () => {
         >
           <RankingDashboard />
         </div>
+        </div>
       </main>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-gray-200/60 bg-white/50 backdrop-blur-sm">
+      <footer className="flex-shrink-0 border-t border-gray-200/60 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <p className="text-xs text-gray-400">
             AI Recruitment System &middot; Powered by Claude AI

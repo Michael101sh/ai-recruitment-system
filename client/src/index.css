@@ -47,9 +47,16 @@
 
   .btn-primary {
     @apply px-6 py-2.5 text-white font-medium rounded-xl shadow-md
-           active:scale-[0.98] transition-all duration-200 disabled:opacity-50
+           active:scale-[0.98] transition-all duration-200
            disabled:cursor-not-allowed disabled:active:scale-100;
     background-image: linear-gradient(to right, #6d28d9, #7c3aed);
+  }
+
+  .btn-primary:disabled {
+    background-image: none;
+    background-color: #c4b5fd;
+    color: #f5f3ff;
+    box-shadow: none;
   }
 
   .btn-primary:hover:not(:disabled) {

@@ -56,7 +56,7 @@ export const generateCandidatesWithCVs = async (
       });
 
       // Generate a full CV for this candidate
-      const cvContent = await generateCV({
+      const cvResult = await generateCV({
         firstName: profile.firstName,
         lastName: profile.lastName,
         yearsOfExp: profile.yearsOfExp,
@@ -66,7 +66,8 @@ export const generateCandidatesWithCVs = async (
       const cv = await prisma.cV.create({
         data: {
           candidateId: candidate.id,
-          content: cvContent,
+          content: cvResult.content,
+          prompt: cvResult.prompt,
           generatedBy: 'claude-sonnet-4',
         },
       });

@@ -89,7 +89,7 @@ export const generateCV = async (candidateData: {
   lastName: string;
   yearsOfExp: number;
   skills: string[];
-}): Promise<string> => {
+}): Promise<{ content: string; prompt: string }> => {
   const prompt = `Create a realistic CV/resume in English for the following candidate.
 Format it in a clean, structured manner with clear sections.
 
@@ -127,7 +127,7 @@ All content must be in English.`;
     throw new Error('No text content received from Claude API');
   }
 
-  return textBlock.text;
+  return { content: textBlock.text, prompt };
 };
 
 /**
