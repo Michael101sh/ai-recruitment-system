@@ -1,45 +1,18 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 import { cn } from '../utils/cn';
+import { useGenerateFlow } from '../hooks/useGenerateFlow';
 import type { BatchGenerationResult } from '../types';
 
 interface GenerateCandidatesProps {
   onGenerate: (count: number) => Promise<BatchGenerationResult>;
 }
 
-const STEP_MESSAGES = [
-  'Crafting unique candidate personas...',
-  'Generating professional backgrounds...',
-  'Building skill profiles...',
-  'Writing personalized CVs...',
-  'Finalizing candidate records...',
-];
-
 export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
   onGenerate,
 }) => {
   const [count, setCount] = useState(3);
-  const [result, setResult] = useState<BatchGenerationResult | null>(null);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGenerate = useCallback(async () => {
-    setResult(null);
-    setStepIndex(0);
-    setIsGenerating(true);
-
-    const interval = setInterval(() => {
-      setStepIndex((prev) => (prev + 1) % STEP_MESSAGES.length);
-    }, 3000);
-
-    try {
-      const batchResult = await onGenerate(count);
-      setResult(batchResult);
-    } finally {
-      clearInterval(interval);
-      setIsGenerating(false);
-    }
-  }, [count, onGenerate]);
+  const { isGenerating, result, stepMessage, handleGenerate } = useGenerateFlow(count, onGenerate);
 
   return (
     <div className="space-y-6">
@@ -150,7 +123,7 @@ export const GenerateCandidates: React.FC<GenerateCandidatesProps> = ({
               AI is generating {count} candidate{count > 1 ? 's' : ''}
             </h3>
             <p className="text-sm text-gray-500 mb-4 animate-pulse-soft">
-              {STEP_MESSAGES[stepIndex]}
+              {stepMessage}
             </p>
 
             <div className="w-full max-w-sm">
