@@ -2,7 +2,7 @@
 
 > AI-powered candidate CV generation and ranking system built with Claude API
 
-Full-stack TypeScript application for automating recruitment workflows:
+## Features
 - 🎯 Generate professional CVs using Claude AI
 - 📊 Smart candidate ranking and scoring
 - 🗂️ Interview prioritization
@@ -12,7 +12,6 @@ Full-stack TypeScript application for automating recruitment workflows:
 - **Backend**: Node.js, Express, TypeScript, Prisma, PostgreSQL
 - **Frontend**: React, Vite, TypeScript, TailwindCSS
 - **AI**: Anthropic Claude API (Sonnet 4)
-```
 
 ## Setup
 ```bash
