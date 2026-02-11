@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 import VirtualList from './VirtualList';
 import { cn } from '../utils/cn';
 import { getApiErrorMessage } from '../utils/apiError';
-import { rankingApi } from '../services/api';
-import type { InterviewListResponse, Ranking } from '../types';
+import { useInterviewList, useRankAll } from '../hooks/useRankings';
+import type { Ranking } from '../types';
 
 /** Medal icons for top 3 */
 const MEDAL_COLORS: Record<number, string> = {
@@ -110,44 +110,24 @@ interface RankingDashboardProps {
 }
 
 export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingComplete, totalCandidates: totalCandidatesInSystem }) => {
-  const [interviewList, setInterviewList] = useState<InterviewListResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRanking, setIsRanking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [criteria, setCriteria] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleFetchInterviewList = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await rankingApi.getInterviewList();
-      setInterviewList(data);
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to load interview list. Please try again.'));
-      console.error('Error fetching interview list:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data: interviewList, isLoading, error: queryError } = useInterviewList();
+  const rankMutation = useRankAll(setError);
 
   useEffect(() => {
-    handleFetchInterviewList();
-  }, [handleFetchInterviewList]);
-
-  const handleRankAll = useCallback(async () => {
-    setIsRanking(true);
-    setError(null);
-    try {
-      await rankingApi.rankAll(criteria || undefined);
-      await handleFetchInterviewList();
-      onRankingComplete?.();
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to rank candidates. Please try again.'));
-      console.error('Error ranking candidates:', err);
-    } finally {
-      setIsRanking(false);
+    if (queryError) {
+      setError(getApiErrorMessage(queryError, 'Failed to load interview list. Please try again.'));
     }
-  }, [criteria, handleFetchInterviewList, onRankingComplete]);
+  }, [queryError]);
+
+  const handleRankAll = () => {
+    setError(null);
+    rankMutation.mutate(criteria || undefined, {
+      onSuccess: () => onRankingComplete?.(),
+    });
+  };
 
   const totalApproved = interviewList?.shouldInterview.length ?? 0;
   const totalRejected = interviewList?.shouldNotInterview.length ?? 0;
@@ -196,11 +176,11 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
         <button
           type="button"
           onClick={handleRankAll}
-          disabled={isRanking}
+          disabled={rankMutation.isPending}
           className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap text-sm !py-2"
           aria-label="Rank all candidates"
         >
-          {isRanking ? (
+          {rankMutation.isPending ? (
             <>
               <span className="animate-spin inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" />
               Ranking...
