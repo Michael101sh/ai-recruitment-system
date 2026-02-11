@@ -13,25 +13,22 @@ export const CandidateSchema = z.object({
 
 export type CandidateInput = z.infer<typeof CandidateSchema>;
 
-// ── Ranking Schemas ──────────────────────────────────────────────────
+// ── CV Generation Result ─────────────────────────────────────────────
 
-export const RankCandidatesSchema = z.object({
-  jobDescription: z.string().min(10, 'Job description must be at least 10 characters'),
-  candidateIds: z.array(z.string().uuid()).min(1, 'At least one candidate is required'),
-});
+export interface CVGenerationResult {
+  candidateId: string;
+  cvId: string;
+  content: string;
+}
 
-export type RankCandidatesInput = z.infer<typeof RankCandidatesSchema>;
+// ── Ranking Result from AI ───────────────────────────────────────────
 
-// ── Interview Schemas ────────────────────────────────────────────────
-
-export const InterviewSchema = z.object({
-  candidateId: z.string().uuid(),
-  scheduledFor: z.string().datetime().optional(),
-  status: z.enum(['pending', 'scheduled', 'completed', 'cancelled']).default('pending'),
-  notes: z.string().optional(),
-});
-
-export type InterviewInput = z.infer<typeof InterviewSchema>;
+export interface RankingResult {
+  name: string;
+  score: number;
+  reasoning: string;
+  shouldInterview: boolean;
+}
 
 // ── API Response Types ───────────────────────────────────────────────
 
@@ -45,16 +42,3 @@ export interface ApiErrorResponse {
     stack?: string;
   };
 }
-
-// ── Ranking Result from AI ───────────────────────────────────────────
-
-export const RankingResultSchema = z.object({
-  candidateId: z.string().uuid(),
-  score: z.number().int().min(1).max(100),
-  reasoning: z.string(),
-  criteria: z.string(),
-  shouldInterview: z.boolean(),
-  priority: z.number().int().min(1),
-});
-
-export type RankingResult = z.infer<typeof RankingResultSchema>;

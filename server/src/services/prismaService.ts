@@ -14,4 +14,10 @@ prisma.$connect()
     process.exit(1);
   });
 
+// Graceful shutdown to close the database connection pool
+process.on('beforeExit', async () => {
+  logger.info('Disconnecting from database...');
+  await prisma.$disconnect();
+});
+
 export { prisma };

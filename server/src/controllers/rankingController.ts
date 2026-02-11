@@ -2,10 +2,10 @@ import type { Request, Response, NextFunction } from 'express';
 
 import { prisma } from '../services/prismaService';
 import { rankCandidates } from '../services/claudeService';
-import type { RankCandidatesInput } from '../types';
 
 /**
- * Ranks a set of candidates against a job description using Claude AI
+ * Ranks all candidates in the system against given criteria using Claude AI.
+ * Saves rankings with priority based on result order (index + 1).
  */
 export const rankAllCandidates = async (
   req: Request,
@@ -13,67 +13,71 @@ export const rankAllCandidates = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { jobDescription, candidateIds }: RankCandidatesInput = req.body;
+    const criteria: string = req.body.criteria || 'Software Engineering Position';
 
-    // Fetch candidates with their skills
+    // Fetch all candidates with their skills
     const candidates = await prisma.candidate.findMany({
-      where: { id: { in: candidateIds } },
       include: {
         skills: { include: { skill: true } },
       },
     });
 
     if (candidates.length === 0) {
-      res.status(404).json({ error: { message: 'No candidates found for the provided IDs' } });
+      res.status(404).json({ error: { message: 'No candidates found in the system' } });
       return;
     }
 
     // Prepare candidate data for AI ranking
     const candidateData = candidates.map((c) => ({
       id: c.id,
-      firstName: c.firstName,
-      lastName: c.lastName,
-      yearsOfExp: c.yearsOfExp,
+      name: `${c.firstName} ${c.lastName}`,
+      experience: c.yearsOfExp,
       skills: c.skills.map((cs) => cs.skill.name),
     }));
 
     // Get AI rankings
-    const rankings = await rankCandidates(candidateData, jobDescription);
+    const aiRankings = await rankCandidates(candidateData, criteria);
 
-    // Store rankings in database
+    // Save rankings to database with priority = index + 1
     const savedRankings = await Promise.all(
-      rankings.map((ranking) =>
-        prisma.ranking.create({
+      aiRankings.map((ranking, index) => {
+        // Match AI result back to candidate by name
+        const matched = candidates.find(
+          (c) => `${c.firstName} ${c.lastName}` === ranking.name
+        );
+
+        if (!matched) {
+          throw new Error(`Could not match ranking result for candidate: ${ranking.name}`);
+        }
+
+        return prisma.ranking.create({
           data: {
-            candidateId: ranking.candidateId,
+            candidateId: matched.id,
             score: ranking.score,
             reasoning: ranking.reasoning,
-            criteria: ranking.criteria,
+            criteria,
             shouldInterview: ranking.shouldInterview,
-            priority: ranking.priority,
+            priority: index + 1,
           },
           include: {
             candidate: {
               include: { skills: { include: { skill: true } } },
             },
           },
-        })
-      )
+        });
+      })
     );
 
-    // Sort by priority ascending (1 = highest priority)
-    const sortedRankings = savedRankings.sort((a, b) => a.priority - b.priority);
-
-    res.status(200).json({ data: sortedRankings });
+    res.status(200).json({ data: savedRankings });
   } catch (error) {
     next(error);
   }
 };
 
 /**
- * Retrieves all rankings, sorted by priority ascending
+ * Retrieves all rankings with candidate details, ordered by priority ascending
  */
-export const getAllRankings = async (
+export const getRankings = async (
   _req: Request,
   res: Response,
   next: NextFunction
@@ -89,6 +93,43 @@ export const getAllRankings = async (
     });
 
     res.status(200).json({ data: rankings });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Returns candidates split into two lists: those who should be interviewed
+ * (ordered by priority) and those who should not (ordered by score descending)
+ */
+export const getInterviewList = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const rankings = await prisma.ranking.findMany({
+      include: {
+        candidate: {
+          include: { skills: { include: { skill: true } } },
+        },
+      },
+    });
+
+    const shouldInterview = rankings
+      .filter((r) => r.shouldInterview)
+      .sort((a, b) => a.priority - b.priority);
+
+    const shouldNotInterview = rankings
+      .filter((r) => !r.shouldInterview)
+      .sort((a, b) => b.score - a.score);
+
+    res.status(200).json({
+      data: {
+        shouldInterview,
+        shouldNotInterview,
+      },
+    });
   } catch (error) {
     next(error);
   }

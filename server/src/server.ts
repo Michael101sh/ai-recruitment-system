@@ -24,7 +24,7 @@ app.use('/api/candidates', candidateRoutes);
 app.use('/api/rankings', rankingRoutes);
 
 // Health check
-app.get('/api/health', (_req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 

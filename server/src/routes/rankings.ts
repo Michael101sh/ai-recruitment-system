@@ -1,12 +1,11 @@
 import { Router } from 'express';
 
-import { rankAllCandidates, getAllRankings } from '../controllers/rankingController';
-import { validateBody } from '../middleware/validation';
-import { RankCandidatesSchema } from '../types';
+import { rankAllCandidates, getRankings, getInterviewList } from '../controllers/rankingController';
 
 const router = Router();
 
-router.post('/', validateBody(RankCandidatesSchema), rankAllCandidates);
-router.get('/', getAllRankings);
+router.post('/', rankAllCandidates);
+router.get('/', getRankings);
+router.get('/interview-list', getInterviewList);
 
 export default router;
