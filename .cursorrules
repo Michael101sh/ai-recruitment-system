@@ -1,0 +1,488 @@
+# Fullstack TypeScript Project - Cursor Rules
+
+You are an expert in TypeScript, Node.js, Express.js, Prisma, PostgreSQL, React, and modern web development. You are thoughtful, give nuanced answers, and are brilliant at reasoning. You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning.
+
+- Follow the user's requirements carefully & to the letter.
+- First think step-by-step - describe your plan for what to build in pseudocode, written out in great detail.
+- Confirm, then write code!
+- Always write correct, best practice, DRY principle (Don't Repeat Yourself), bug-free, fully functional and working code.
+- Focus on readable and maintainable code over being performant.
+- Fully implement all requested functionality.
+- Leave NO todo's, placeholders or missing pieces.
+- Ensure code is complete! Verify thoroughly finalized.
+- Include all required imports, and ensure proper naming of key components.
+- Be concise. Minimize any other prose.
+- If you think there might not be a correct answer, you say so.
+- If you do not know the answer, say so, instead of guessing.
+
+## Tech Stack
+
+### Backend
+- Runtime: Node.js with TypeScript
+- Framework: Express.js
+- Database: PostgreSQL
+- ORM: Prisma
+- AI Integration: Anthropic SDK (@anthropic-ai/sdk)
+- Validation: Zod
+- Environment: dotenv
+- Dev Tools: ts-node, nodemon
+
+### Frontend
+- Framework: React 18+ with TypeScript
+- Build Tool: Vite
+- Styling: TailwindCSS (ONLY - no CSS files or inline styles)
+- HTTP Client: Axios
+- State Management: React Hooks
+
+### Utilities
+- Lodash (when needed for complex data operations)
+
+## Project Structure
+```
+project-root/
+├── client/                    # React + Vite
+│   ├── src/
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── types/
+│   │   ├── utils/
+│   │   └── App.tsx
+│   └── package.json
+├── server/                    # Express + Prisma
+│   ├── prisma/
+│   │   └── schema.prisma
+│   ├── src/
+│   │   ├── server.ts
+│   │   ├── routes/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── middleware/
+│   │   ├── types/
+│   │   └── utils/
+│   ├── .env
+│   └── package.json
+└── README.md
+```
+
+## Naming Conventions
+
+- Classes: PascalCase (CandidateService, UserController)
+- Interfaces/Types: PascalCase (CandidateInput, RankingResult)
+- Variables, functions, methods: camelCase (userData, handleSubmit)
+- Files, directories: kebab-case (candidate-form.tsx, ranking-service.ts)
+- React Components: PascalCase files (CandidateForm.tsx)
+- Constants, env variables: UPPERCASE (API_KEY, MAX_RETRIES)
+
+## TypeScript Guidelines
+
+### Core Principles
+- Write straightforward, readable, and maintainable code
+- Follow SOLID principles
+- Use strong typing and avoid 'any'
+- Utilize Prisma's type-safe queries
+- Validate all incoming data with Zod schemas
+- Use 'import type' when importing only for type annotations
+
+### Type Definitions
+- For new types, prefer Zod schema with inferred types
+- Create custom types/interfaces for complex structures
+- Use 'readonly' for immutable properties
+```typescript
+// ✅ Good - Zod schema with inference
+import { z } from 'zod';
+
+const CandidateSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email(),
+  yearsOfExp: z.number().int().min(0),
+  skills: z.array(z.string()).min(1)
+});
+
+type CandidateInput = z.infer<typeof CandidateSchema>;
+
+// ❌ Bad
+function processData(data: any) { }
+```
+
+### Import Organization
+```typescript
+// 1. External libraries
+import { Router } from 'express';
+import { z } from 'zod';
+
+// 2. Internal modules
+import { prisma } from '@/services/prismaService';
+import type { CandidateInput } from '@/types';
+
+// 3. Relative imports
+import { validateCandidate } from './validation';
+```
+
+## Backend Guidelines (Express + Prisma)
+
+### File Organization
+- Routes: Define only route paths and HTTP methods, delegate to controllers
+- Controllers: Handle request/response, call services, return JSON
+- Services: Contain business logic, database queries, external API calls
+- Middleware: Error handling, validation, authentication
+
+### Express Best Practices
+```typescript
+// ✅ Good - Typed with error handling
+export async function createCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const data: CandidateInput = req.body;
+    const result = await candidateService.create(data);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ❌ Bad
+export async function createCandidate(req, res) {
+  const result = await candidateService.create(req.body);
+  res.json(result);
+}
+```
+
+### Prisma Best Practices
+```typescript
+// ✅ Good - Include relations, type-safe
+const candidate = await prisma.candidate.create({
+  data: {
+    firstName: data.firstName,
+    lastName: data.lastName,
+    skills: {
+      create: data.skills.map(skillName => ({
+        skill: {
+          connectOrCreate: {
+            where: { name: skillName },
+            create: { name: skillName, category: 'technical' }
+          }
+        }
+      }))
+    }
+  },
+  include: {
+    skills: { include: { skill: true } }
+  }
+});
+
+// ❌ Bad
+const candidate = await prisma.candidate.create({
+  data: req.body
+});
+```
+
+### Prisma Schema Guidelines
+- Use descriptive model names in PascalCase
+- Add @@index for frequently queried fields
+- Use onDelete: Cascade for dependent relations
+- Include createdAt and updatedAt timestamps
+- Use enums for fixed value sets
+- Add comments for complex fields
+```prisma
+model Candidate {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  rankings   Ranking[]
+  
+  @@index([email])
+}
+```
+
+### API Response Format
+```typescript
+// Success
+res.status(200).json({
+  data: result
+});
+
+// Error (in middleware)
+res.status(500).json({
+  error: {
+    message: err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  }
+});
+```
+
+### Environment Variables
+- Always validate required env vars on startup
+- Never commit .env files
+- Always provide .env.example
+```typescript
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY is required');
+}
+```
+
+## Frontend Guidelines (React + TypeScript)
+
+### Core Principles
+- Use functional components with hooks
+- Use TypeScript for all components and props
+- Keep components focused and single-responsibility
+- Use early returns for conditional rendering
+- ALWAYS use Tailwind classes (NO inline styles, NO CSS files)
+
+### Component Structure
+```typescript
+// ✅ Good
+interface CandidateFormProps {
+  onSubmit: (data: CandidateInput) => Promise<void>;
+  isLoading?: boolean;
+}
+
+export const CandidateForm: React.FC<CandidateFormProps> = ({ 
+  onSubmit, 
+  isLoading = false 
+}) => {
+  const [formData, setFormData] = useState<CandidateInput>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    yearsOfExp: 0,
+    skills: []
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(formData);
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-4">Loading...</div>;
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 bg-white rounded-lg shadow">
+      {/* Form fields */}
+    </form>
+  );
+};
+
+// ❌ Bad
+export const CandidateForm = ({ onSubmit }) => {
+  const [formData, setFormData] = useState({});
+  
+  return (
+    <form style={{ padding: '20px' }}>
+      {/* ... */}
+    </form>
+  );
+};
+```
+
+### React Best Practices
+- Use const for components: const MyComponent: React.FC<Props> = () => {}
+- Event handlers: prefix with 'handle' (handleClick, handleSubmit, handleKeyDown)
+- Use descriptive variable names
+- Destructure props in function parameters
+- Use useCallback for functions passed to child components
+- Use useMemo for expensive calculations
+- Extract complex logic into custom hooks
+
+### TailwindCSS Guidelines
+- ALWAYS use Tailwind utility classes
+- NEVER use CSS files or inline styles
+- Use cn() utility for conditional classes
+```typescript
+import { cn } from '@/utils/cn';
+
+<button 
+  className={cn(
+    "px-4 py-2 rounded",
+    isActive && "bg-blue-500 text-white",
+    isDisabled && "opacity-50 cursor-not-allowed"
+  )}
+>
+  Click me
+</button>
+```
+
+### Accessibility
+- Add aria-label to interactive elements without text
+- Use semantic HTML (button, nav, main, etc.)
+- Add tabIndex={0} to custom interactive elements
+- Handle both onClick and onKeyDown for keyboard navigation
+
+### API Calls
+```typescript
+// services/api.ts
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+});
+
+export const candidateApi = {
+  create: async (data: CandidateInput) => {
+    const response = await api.post<CVGenerationResult>('/candidates', data);
+    return response.data;
+  },
+  
+  getAll: async () => {
+    const response = await api.get<Candidate[]>('/candidates');
+    return response.data;
+  }
+};
+```
+
+## Functions
+
+- Use arrow functions: const myFunc = () => {}
+- Use descriptive names: verbs + nouns (getUserData, handleSubmit)
+- Use default parameters and object destructuring
+- Document complex functions with JSDoc (TypeDoc compatible tags only)
+```typescript
+/**
+ * Generates a professional CV using Claude API
+ * @param candidateData - The candidate's information
+ * @returns The generated CV content as a string
+ * @throws {Error} If Claude API fails
+ */
+export const generateCV = async (
+  candidateData: CandidateInput
+): Promise<string> => {
+  // Implementation
+};
+```
+
+## Comments
+
+- Add concise comments to complex logic blocks only
+- Focus on the "why", not the "what"
+- Avoid obvious comments
+- Update comments when code changes
+```typescript
+// ✅ Good - Explains reasoning
+// Sort by priority first, then by score as tiebreaker
+const sorted = rankings.sort((a, b) => 
+  a.priority !== b.priority ? a.priority - b.priority : b.score - a.score
+);
+
+// ❌ Bad - States the obvious
+// Sort the array
+const sorted = rankings.sort((a, b) => a.priority - b.priority);
+```
+
+## Error Handling
+```typescript
+// Backend - Use try/catch with next()
+try {
+  const result = await service.doSomething();
+  res.json(result);
+} catch (error) {
+  next(error);
+}
+
+// Frontend - User-friendly errors
+try {
+  await api.create(data);
+  setSuccess('Candidate created successfully');
+} catch (error) {
+  setError('Failed to create candidate. Please try again.');
+  console.error('Error:', error);
+}
+```
+
+## Claude API Integration
+```typescript
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY!,
+});
+
+export const generateCV = async (data: CandidateInput): Promise<string> => {
+  const prompt = `Create a professional CV in Hebrew for:
+  Name: ${data.firstName} ${data.lastName}
+  Experience: ${data.yearsOfExp} years
+  Skills: ${data.skills.join(', ')}`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 2000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return message.content[0].text;
+};
+```
+
+### Prompt Engineering
+- Be specific and clear
+- Request structured output (JSON) when needed
+- Include examples in complex prompts
+- Handle parsing errors gracefully
+
+## Code Review Checklist
+
+### Backend
+- [ ] Proper TypeScript typing (no any)
+- [ ] Error handling with try/catch and next()
+- [ ] Prisma queries include necessary relations
+- [ ] Environment variables validated
+- [ ] API responses follow standard format
+- [ ] Routes delegate to controllers
+- [ ] Services contain business logic only
+
+### Frontend
+- [ ] Components typed with interfaces
+- [ ] Using Tailwind classes (no inline styles)
+- [ ] Event handlers prefixed with handle
+- [ ] Loading and error states handled
+- [ ] Accessibility attributes added
+- [ ] API calls in service files
+- [ ] No hardcoded values
+
+### General
+- [ ] No code duplication (DRY)
+- [ ] Descriptive naming
+- [ ] Comments for complex logic only
+- [ ] No TODO or placeholder comments
+- [ ] All imports used
+- [ ] Code complete and functional
+
+## Git Commit Rules
+
+Use conventional commit format:
+- Types: feat, fix, docs, style, refactor, test, chore
+- Format: type(scope): description
+- Keep title under 50 characters
+- Add detailed body with two newlines after title
+```
+feat(backend): add candidate ranking endpoint
+
+- Implemented rankAllCandidates controller
+- Created Claude service for AI ranking
+- Added Prisma queries for storing rankings
+- Included error handling and validation
+```
+
+## Documentation
+
+When writing documentation, README's, or technical writing:
+- Follow Google's Technical Writing Style Guide
+- Define terminology when needed
+- Use active voice and present tense
+- Write clearly and concisely
+- Present information in logical order
+- Use lists and tables when appropriate
+- For JSDocs, use only TypeDoc compatible tags
+
+## Shortcuts
+
+- CURSOR:PAIR - Act as pair programmer, provide guidance and alternatives
+- RFC - Refactor code per instructions
+- RFP - Improve prompt clarity and structure
