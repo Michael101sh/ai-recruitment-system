@@ -151,6 +151,14 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
   const totalRejected = interviewList?.shouldNotInterview.length ?? 0;
   const totalCandidates = totalApproved + totalRejected;
 
+  // Extract the criteria from the first ranking record (all share the same criteria per run)
+  const allRankings = [
+    ...(interviewList?.shouldInterview ?? []),
+    ...(interviewList?.shouldNotInterview ?? []),
+  ];
+  const rankedCriteria = allRankings[0]?.criteria ?? null;
+  const rankedAt = allRankings[0]?.rankedAt ?? null;
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
@@ -222,22 +230,51 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
         </div>
       </div>
 
-      {/* ─── Stats Summary ─── */}
+      {/* ─── Ranking Info + Stats ─── */}
       {totalCandidates > 0 && (
-        <div className="grid grid-cols-3 gap-4 animate-fade-in">
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">{totalCandidates}</p>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Total Ranked</p>
+        <>
+          {/* Criteria banner */}
+          <div className="flex items-center gap-3 p-4 bg-violet-50 border border-violet-200 rounded-2xl animate-fade-in">
+            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-violet-100">
+              <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-violet-800">
+                <span className="font-semibold">Criteria:</span>{' '}
+                <span className="font-medium">{rankedCriteria}</span>
+              </p>
+              {rankedAt && (
+                <p className="text-xs text-violet-500 mt-0.5">
+                  Ranked on {new Date(rankedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-600">{totalApproved}</p>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Interview</p>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 animate-fade-in">
+            <div className="glass-card p-4 text-center">
+              <p className="text-2xl font-bold text-gray-900">{totalCandidates}</p>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Total Ranked</p>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <p className="text-2xl font-bold text-emerald-600">{totalApproved}</p>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Interview</p>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <p className="text-2xl font-bold text-red-500">{totalRejected}</p>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Rejected</p>
+            </div>
           </div>
-          <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-red-500">{totalRejected}</p>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Rejected</p>
-          </div>
-        </div>
+        </>
       )}
 
       {/* ─── Two Columns ─── */}
