@@ -5,7 +5,7 @@ import { generateCV } from '../services/claudeService';
 import type { CandidateInput } from '../types';
 
 /**
- * Creates a new candidate and generates a CV using Claude AI
+ * Creates a new candidate, generates a CV using Claude AI, and stores it
  */
 export const createCandidate = async (
   req: Request,
@@ -22,7 +22,6 @@ export const createCandidate = async (
         email: data.email,
         phone: data.phone,
         yearsOfExp: data.yearsOfExp,
-        summary: data.summary,
         skills: {
           create: data.skills.map((skillName) => ({
             skill: {
@@ -39,34 +38,43 @@ export const createCandidate = async (
       },
     });
 
-    // Generate CV using Claude AI
-    const generatedCV = await generateCV({
+    // Generate CV using Claude AI and store as separate CV record
+    const cvContent = await generateCV({
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
       phone: data.phone,
       yearsOfExp: data.yearsOfExp,
-      summary: data.summary,
       skills: data.skills,
     });
 
-    // Update candidate with generated CV
-    const updatedCandidate = await prisma.candidate.update({
-      where: { id: candidate.id },
-      data: { generatedCV },
-      include: {
-        skills: { include: { skill: true } },
+    await prisma.cV.create({
+      data: {
+        candidateId: candidate.id,
+        content: cvContent,
+        generatedBy: 'claude-sonnet-4',
       },
     });
 
-    res.status(201).json({ data: updatedCandidate });
+    // Return the full candidate with all relations
+    const fullCandidate = await prisma.candidate.findUnique({
+      where: { id: candidate.id },
+      include: {
+        skills: { include: { skill: true } },
+        cvs: true,
+        rankings: true,
+        interviews: true,
+      },
+    });
+
+    res.status(201).json({ data: fullCandidate });
   } catch (error) {
     next(error);
   }
 };
 
 /**
- * Retrieves all candidates with their skills
+ * Retrieves all candidates with their skills, CVs, rankings, and interviews
  */
 export const getAllCandidates = async (
   _req: Request,
@@ -77,7 +85,9 @@ export const getAllCandidates = async (
     const candidates = await prisma.candidate.findMany({
       include: {
         skills: { include: { skill: true } },
-        rankings: true,
+        cvs: { orderBy: { createdAt: 'desc' } },
+        rankings: { orderBy: { rankedAt: 'desc' } },
+        interviews: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -89,7 +99,7 @@ export const getAllCandidates = async (
 };
 
 /**
- * Retrieves a single candidate by ID
+ * Retrieves a single candidate by ID with all relations
  */
 export const getCandidateById = async (
   req: Request,
@@ -103,7 +113,9 @@ export const getCandidateById = async (
       where: { id },
       include: {
         skills: { include: { skill: true } },
-        rankings: { orderBy: { createdAt: 'desc' } },
+        cvs: { orderBy: { createdAt: 'desc' } },
+        rankings: { orderBy: { rankedAt: 'desc' } },
+        interviews: true,
       },
     });
 

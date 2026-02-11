@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 import { cn } from '../utils/cn';
-import type { Ranking, RankPriority } from '../types';
+import type { Ranking } from '../types';
 
 interface RankingPanelProps {
   selectedCandidateIds: string[];
@@ -10,11 +10,14 @@ interface RankingPanelProps {
   onRank: (jobDescription: string) => Promise<void>;
 }
 
-const PRIORITY_STYLES: Record<RankPriority, string> = {
-  HIGH: 'bg-green-100 text-green-800 border-green-300',
-  MEDIUM: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  LOW: 'bg-orange-100 text-orange-800 border-orange-300',
-  NOT_ELIGIBLE: 'bg-red-100 text-red-800 border-red-300',
+/**
+ * Returns a Tailwind class string based on the ranking score
+ */
+const getScoreStyle = (score: number): string => {
+  if (score >= 80) return 'bg-green-100 text-green-800 border-green-300';
+  if (score >= 50) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  if (score >= 20) return 'bg-orange-100 text-orange-800 border-orange-300';
+  return 'bg-red-100 text-red-800 border-red-300';
 };
 
 export const RankingPanel: React.FC<RankingPanelProps> = ({
@@ -79,17 +82,19 @@ export const RankingPanel: React.FC<RankingPanelProps> = ({
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Ranking Results</h2>
 
           <div className="space-y-3">
-            {rankings.map((ranking, index) => (
+            {rankings.map((ranking) => (
               <div
                 key={ranking.id}
                 className={cn(
                   'p-4 rounded-lg border',
-                  PRIORITY_STYLES[ranking.priority]
+                  getScoreStyle(ranking.score)
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-gray-700">#{index + 1}</span>
+                    <span className="text-lg font-bold text-gray-700">
+                      #{ranking.priority}
+                    </span>
                     <span className="font-medium">
                       {ranking.candidate?.firstName} {ranking.candidate?.lastName}
                     </span>
@@ -100,16 +105,21 @@ export const RankingPanel: React.FC<RankingPanelProps> = ({
                     </span>
                     <span className={cn(
                       'px-2 py-1 text-xs font-medium rounded-full border',
-                      PRIORITY_STYLES[ranking.priority]
+                      ranking.shouldInterview
+                        ? 'bg-green-100 text-green-800 border-green-300'
+                        : 'bg-red-100 text-red-800 border-red-300'
                     )}>
-                      {ranking.priority}
+                      {ranking.shouldInterview ? 'Interview' : 'Skip'}
                     </span>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 mb-1">
+                  Criteria: {ranking.criteria}
+                </p>
                 <p className="text-sm text-gray-700">{ranking.reasoning}</p>
-                {!ranking.isEligible && (
+                {!ranking.shouldInterview && (
                   <p className="mt-1 text-xs font-medium text-red-600">
-                    Not eligible for interview
+                    Not recommended for interview
                   </p>
                 )}
               </div>

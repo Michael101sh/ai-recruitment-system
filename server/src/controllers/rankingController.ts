@@ -34,7 +34,6 @@ export const rankAllCandidates = async (
       firstName: c.firstName,
       lastName: c.lastName,
       yearsOfExp: c.yearsOfExp,
-      summary: c.summary,
       skills: c.skills.map((cs) => cs.skill.name),
     }));
 
@@ -48,9 +47,10 @@ export const rankAllCandidates = async (
           data: {
             candidateId: ranking.candidateId,
             score: ranking.score,
-            priority: ranking.priority,
             reasoning: ranking.reasoning,
-            isEligible: ranking.isEligible,
+            criteria: ranking.criteria,
+            shouldInterview: ranking.shouldInterview,
+            priority: ranking.priority,
           },
           include: {
             candidate: {
@@ -61,8 +61,8 @@ export const rankAllCandidates = async (
       )
     );
 
-    // Sort by score descending to show highest-ranked first
-    const sortedRankings = savedRankings.sort((a, b) => b.score - a.score);
+    // Sort by priority ascending (1 = highest priority)
+    const sortedRankings = savedRankings.sort((a, b) => a.priority - b.priority);
 
     res.status(200).json({ data: sortedRankings });
   } catch (error) {
@@ -71,7 +71,7 @@ export const rankAllCandidates = async (
 };
 
 /**
- * Retrieves all rankings, sorted by score descending
+ * Retrieves all rankings, sorted by priority ascending
  */
 export const getAllRankings = async (
   _req: Request,
@@ -85,7 +85,7 @@ export const getAllRankings = async (
           include: { skills: { include: { skill: true } } },
         },
       },
-      orderBy: { score: 'desc' },
+      orderBy: { priority: 'asc' },
     });
 
     res.status(200).json({ data: rankings });

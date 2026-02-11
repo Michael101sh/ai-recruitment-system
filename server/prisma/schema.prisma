@@ -9,30 +9,43 @@ datasource db {
 
 /// Represents a job candidate in the recruitment system
 model Candidate {
-  id          String   @id @default(uuid())
-  firstName   String
-  lastName    String
-  email       String   @unique
-  phone       String?
-  yearsOfExp  Int      @default(0)
-  summary     String?
-  generatedCV String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  firstName  String
+  lastName   String
+  email      String   @unique
+  phone      String?
+  yearsOfExp Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  skills   CandidateSkill[]
-  rankings Ranking[]
+  cvs        CV[]
+  skills     CandidateSkill[]
+  rankings   Ranking[]
+  interviews Interview[]
 
   @@index([email])
   @@index([createdAt])
 }
 
+/// Stores AI-generated CVs for a candidate
+model CV {
+  id          String   @id @default(uuid())
+  candidateId String
+  content     String   @db.Text
+  generatedBy String   @default("claude-sonnet-4")
+  prompt      String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
 /// Represents a skill that candidates can possess
 model Skill {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  category  String   @default("technical")
-  createdAt DateTime @default(now())
+  id       String @id @default(uuid())
+  name     String @unique
+  category String @default("technical")
 
   candidates CandidateSkill[]
 
@@ -41,27 +54,28 @@ model Skill {
 
 /// Junction table for many-to-many relationship between Candidate and Skill
 model CandidateSkill {
-  id          String @id @default(uuid())
   candidateId String
   skillId     String
+  level       Int    @default(5)
 
   candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   skill     Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
-  @@unique([candidateId, skillId])
+  @@id([candidateId, skillId])
   @@index([candidateId])
   @@index([skillId])
 }
 
 /// Stores ranking results for candidates, produced by AI evaluation
 model Ranking {
-  id          String      @id @default(uuid())
-  candidateId String
-  score       Float
-  priority    RankPriority
-  reasoning   String      @db.Text
-  isEligible  Boolean     @default(true)
-  createdAt   DateTime    @default(now())
+  id              String   @id @default(uuid())
+  candidateId     String
+  score           Int
+  reasoning       String   @db.Text
+  criteria        String
+  shouldInterview Boolean  @default(true)
+  priority        Int
+  rankedAt        DateTime @default(now())
 
   candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
@@ -70,10 +84,16 @@ model Ranking {
   @@index([priority])
 }
 
-/// Priority levels for candidate ranking
-enum RankPriority {
-  HIGH
-  MEDIUM
-  LOW
-  NOT_ELIGIBLE
+/// Tracks interview scheduling and status for candidates
+model Interview {
+  id           String    @id @default(uuid())
+  candidateId  String
+  scheduledFor DateTime?
+  status       String    @default("pending")
+  notes        String?   @db.Text
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([status])
 }

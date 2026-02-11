@@ -6,7 +6,6 @@ export interface CandidateInput {
   email: string;
   phone?: string;
   yearsOfExp: number;
-  summary?: string;
   skills: string[];
 }
 
@@ -17,10 +16,27 @@ export interface Skill {
 }
 
 export interface CandidateSkill {
-  id: string;
   candidateId: string;
   skillId: string;
+  level: number;
   skill: Skill;
+}
+
+export interface CV {
+  id: string;
+  candidateId: string;
+  content: string;
+  generatedBy: string;
+  prompt: string | null;
+  createdAt: string;
+}
+
+export interface Interview {
+  id: string;
+  candidateId: string;
+  scheduledFor: string | null;
+  status: string;
+  notes: string | null;
 }
 
 export interface Candidate {
@@ -30,26 +46,25 @@ export interface Candidate {
   email: string;
   phone: string | null;
   yearsOfExp: number;
-  summary: string | null;
-  generatedCV: string | null;
   createdAt: string;
   updatedAt: string;
   skills: CandidateSkill[];
+  cvs: CV[];
   rankings: Ranking[];
+  interviews: Interview[];
 }
 
 // ── Ranking Types ────────────────────────────────────────────────────
-
-export type RankPriority = 'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_ELIGIBLE';
 
 export interface Ranking {
   id: string;
   candidateId: string;
   score: number;
-  priority: RankPriority;
   reasoning: string;
-  isEligible: boolean;
-  createdAt: string;
+  criteria: string;
+  shouldInterview: boolean;
+  priority: number;
+  rankedAt: string;
   candidate?: Candidate;
 }
 

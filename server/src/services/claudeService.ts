@@ -23,7 +23,6 @@ export const generateCV = async (candidateData: {
   email: string;
   phone?: string;
   yearsOfExp: number;
-  summary?: string;
   skills: string[];
 }): Promise<string> => {
   const prompt = `Create a professional CV/resume for the following candidate. 
@@ -34,7 +33,6 @@ Candidate Information:
 - Email: ${candidateData.email}
 ${candidateData.phone ? `- Phone: ${candidateData.phone}` : ''}
 - Years of Experience: ${candidateData.yearsOfExp}
-${candidateData.summary ? `- Professional Summary: ${candidateData.summary}` : ''}
 - Skills: ${candidateData.skills.join(', ')}
 
 Please generate a complete, professional CV with the following sections:
@@ -66,7 +64,7 @@ Make it detailed, professional, and ready for job applications.`;
  * Ranks candidates against a job description using Claude API
  * @param candidates - Array of candidate data to rank
  * @param jobDescription - The job description to rank candidates against
- * @returns Array of ranking results with scores and reasoning
+ * @returns Array of ranking results with scores, priorities, and reasoning
  * @throws {Error} If Claude API call fails or response parsing fails
  */
 export const rankCandidates = async (
@@ -75,7 +73,6 @@ export const rankCandidates = async (
     firstName: string;
     lastName: string;
     yearsOfExp: number;
-    summary: string | null;
     skills: string[];
   }>,
   jobDescription: string
@@ -83,7 +80,7 @@ export const rankCandidates = async (
   const candidatesList = candidates
     .map(
       (c) =>
-        `- ID: ${c.id}, Name: ${c.firstName} ${c.lastName}, Experience: ${c.yearsOfExp} years, Skills: ${c.skills.join(', ')}${c.summary ? `, Summary: ${c.summary}` : ''}`
+        `- ID: ${c.id}, Name: ${c.firstName} ${c.lastName}, Experience: ${c.yearsOfExp} years, Skills: ${c.skills.join(', ')}`
     )
     .join('\n');
 
@@ -99,19 +96,20 @@ For each candidate, provide a JSON array with the following structure:
 [
   {
     "candidateId": "uuid",
-    "score": 0-100,
-    "priority": "HIGH" | "MEDIUM" | "LOW" | "NOT_ELIGIBLE",
-    "reasoning": "Brief explanation of the score",
-    "isEligible": true/false
+    "score": 1-100,
+    "reasoning": "Brief explanation of the score and evaluation",
+    "criteria": "Key criteria that were evaluated",
+    "shouldInterview": true/false,
+    "priority": 1
   }
 ]
 
 Rules:
-- Score 80-100: HIGH priority (strong match)
-- Score 50-79: MEDIUM priority (partial match)
-- Score 20-49: LOW priority (weak match)
-- Score 0-19: NOT_ELIGIBLE (not suitable)
-- isEligible should be false for NOT_ELIGIBLE candidates
+- score: Integer 1-100 reflecting how well the candidate matches the job
+- priority: Integer starting at 1 (highest priority) assigned by rank order
+- shouldInterview: true if score >= 50, false otherwise
+- criteria: Summarize the key aspects evaluated (skills match, experience, etc.)
+- reasoning: Explain why this candidate received this score
 
 Return ONLY the JSON array, no additional text.`;
 

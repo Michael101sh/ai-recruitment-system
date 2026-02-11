@@ -14,7 +14,6 @@ const INITIAL_FORM_DATA: CandidateInput = {
   email: '',
   phone: '',
   yearsOfExp: 0,
-  summary: '',
   skills: [],
 };
 
@@ -166,21 +165,6 @@ export const CandidateForm: React.FC<CandidateFormProps> = ({
           value={formData.yearsOfExp}
           onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="summary" className="block text-sm font-medium text-gray-700 mb-1">
-          Professional Summary
-        </label>
-        <textarea
-          id="summary"
-          name="summary"
-          rows={3}
-          value={formData.summary}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Brief professional summary..."
         />
       </div>
 

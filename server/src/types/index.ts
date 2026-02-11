@@ -8,8 +8,7 @@ export const CandidateSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   yearsOfExp: z.number().int().min(0, 'Years of experience must be non-negative'),
-  summary: z.string().optional(),
-  skills: z.array(z.string()).min(1, 'At least one skill is required'),
+  skills: z.array(z.string().min(1)).min(1, 'At least one skill is required'),
 });
 
 export type CandidateInput = z.infer<typeof CandidateSchema>;
@@ -22,6 +21,17 @@ export const RankCandidatesSchema = z.object({
 });
 
 export type RankCandidatesInput = z.infer<typeof RankCandidatesSchema>;
+
+// ── Interview Schemas ────────────────────────────────────────────────
+
+export const InterviewSchema = z.object({
+  candidateId: z.string().uuid(),
+  scheduledFor: z.string().datetime().optional(),
+  status: z.enum(['pending', 'scheduled', 'completed', 'cancelled']).default('pending'),
+  notes: z.string().optional(),
+});
+
+export type InterviewInput = z.infer<typeof InterviewSchema>;
 
 // ── API Response Types ───────────────────────────────────────────────
 
@@ -40,10 +50,11 @@ export interface ApiErrorResponse {
 
 export const RankingResultSchema = z.object({
   candidateId: z.string().uuid(),
-  score: z.number().min(0).max(100),
-  priority: z.enum(['HIGH', 'MEDIUM', 'LOW', 'NOT_ELIGIBLE']),
+  score: z.number().int().min(1).max(100),
   reasoning: z.string(),
-  isEligible: z.boolean(),
+  criteria: z.string(),
+  shouldInterview: z.boolean(),
+  priority: z.number().int().min(1),
 });
 
 export type RankingResult = z.infer<typeof RankingResultSchema>;

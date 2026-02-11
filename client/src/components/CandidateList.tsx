@@ -60,7 +60,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
                       <div className="flex flex-wrap gap-1 mt-2">
                         {candidate.skills.map((cs) => (
                           <span
-                            key={cs.id}
+                            key={cs.skillId}
                             className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full"
                           >
                             {cs.skill.name}
@@ -71,7 +71,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
                   </div>
                 </div>
 
-                {candidate.generatedCV && (
+                {candidate.cvs.length > 0 && (
                   <button
                     type="button"
                     onClick={() => onViewCV(candidate)}
