@@ -38,8 +38,6 @@ const RankingCard: React.FC<{ ranking: Ranking; index: number; variant: 'approve
     <div
       className={cn(
         'group relative glass-card-hover p-4 animate-fade-in',
-        variant === 'approved' && position <= 3 && 'ring-1',
-        variant === 'approved' && position <= 3 && config.ring,
       )}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
     >

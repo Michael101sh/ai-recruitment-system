@@ -47,7 +47,7 @@ function VirtualList<T>({
     /* flex-1 fills remaining height; min-h-0 lets it shrink inside flex containers. */
     <div
       ref={parentRef}
-      className={`flex-1 min-h-0 overflow-auto ${className}`}
+      className={`flex-1 min-h-0 overflow-auto p-1 ${className}`}
     >
       {/* Inner div is sized to the total virtual height so the scrollbar is accurate. */}
       <div
