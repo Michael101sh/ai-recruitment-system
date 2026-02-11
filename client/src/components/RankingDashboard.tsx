@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
+import VirtualList from './VirtualList';
 import { cn } from '../utils/cn';
 import { rankingApi } from '../services/api';
 import type { InterviewListResponse, Ranking } from '../types';
@@ -262,51 +263,57 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
         </div>
       </div>
 
-      {/* ─── Scrollable Lists ─── */}
-      <div className="flex-1 overflow-y-auto pr-1">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Should Interview */}
-          <div>
-            {!interviewList || interviewList.shouldInterview.length === 0 ? (
-              <div className="glass-card p-8 text-center">
-                <p className="text-sm text-gray-500">No candidates recommended for interview yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {interviewList.shouldInterview.map((ranking, idx) => (
-                  <RankingCard key={ranking.id} ranking={ranking} index={idx} variant="approved" />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Should Not Interview */}
-          <div>
-            {/* Show title on mobile only (since it's hidden in the fixed header on mobile) */}
-            <div className="flex lg:hidden items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center">
-                <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">Not Recommended</h3>
-              {totalRejected > 0 && (
-                <span className="badge bg-red-100 text-red-600">{totalRejected}</span>
-              )}
+      {/* ─── Virtualised Lists ─── */}
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-4 min-h-0">
+        {/* Should Interview */}
+        <div className="flex flex-col min-h-0 flex-1 lg:flex-auto">
+          {!interviewList || interviewList.shouldInterview.length === 0 ? (
+            <div className="glass-card p-8 text-center">
+              <p className="text-sm text-gray-500">No candidates recommended for interview yet.</p>
             </div>
+          ) : (
+            <VirtualList
+              items={interviewList.shouldInterview}
+              renderRow={(ranking, idx) => (
+                <RankingCard ranking={ranking} index={idx} variant="approved" />
+              )}
+              estimateSize={() => 152}
+              gap={12}
+              className="pr-1"
+            />
+          )}
+        </div>
 
-            {!interviewList || interviewList.shouldNotInterview.length === 0 ? (
-              <div className="glass-card p-8 text-center">
-                <p className="text-sm text-gray-500">No rejected candidates.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {interviewList.shouldNotInterview.map((ranking, idx) => (
-                  <RankingCard key={ranking.id} ranking={ranking} index={idx} variant="rejected" />
-                ))}
-              </div>
+        {/* Should Not Interview */}
+        <div className="flex flex-col min-h-0 flex-1 lg:flex-auto">
+          {/* Show title on mobile only (since it's hidden in the fixed header on mobile) */}
+          <div className="flex lg:hidden items-center gap-2.5 mb-3 flex-shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Not Recommended</h3>
+            {totalRejected > 0 && (
+              <span className="badge bg-red-100 text-red-600">{totalRejected}</span>
             )}
           </div>
+
+          {!interviewList || interviewList.shouldNotInterview.length === 0 ? (
+            <div className="glass-card p-8 text-center">
+              <p className="text-sm text-gray-500">No rejected candidates.</p>
+            </div>
+          ) : (
+            <VirtualList
+              items={interviewList.shouldNotInterview}
+              renderRow={(ranking, idx) => (
+                <RankingCard ranking={ranking} index={idx} variant="rejected" />
+              )}
+              estimateSize={() => 152}
+              gap={12}
+              className="pr-1"
+            />
+          )}
         </div>
       </div>
     </div>
