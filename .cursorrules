@@ -486,3 +486,265 @@ When writing documentation, README's, or technical writing:
 - CURSOR:PAIR - Act as pair programmer, provide guidance and alternatives
 - RFC - Refactor code per instructions
 - RFP - Improve prompt clarity and structure
+
+## SOLID Principles
+
+Follow SOLID principles strictly in all code:
+
+### Single Responsibility Principle (SRP)
+- Each class/function should have ONE reason to change
+- Controllers: Handle HTTP only (request/response)
+- Services: Business logic only
+- Repositories/Prisma: Database operations only
+- Validators: Validation logic only
+```typescript
+// ✅ Good - Single responsibility
+class CandidateService {
+  async create(data: CandidateInput): Promise<Candidate> {
+    return await prisma.candidate.create({ data });
+  }
+}
+
+class CVGenerator {
+  async generate(candidate: Candidate): Promise<string> {
+    return await claudeAPI.generateCV(candidate);
+  }
+}
+
+// ❌ Bad - Multiple responsibilities
+class CandidateService {
+  async createAndGenerateCV(data: CandidateInput) {
+    const candidate = await prisma.candidate.create({ data });
+    const cv = await claudeAPI.generateCV(candidate);
+    await this.sendEmail(candidate.email, cv);
+    return { candidate, cv };
+  }
+}
+```
+
+### Open/Closed Principle (OCP)
+- Open for extension, closed for modification
+- Use interfaces and abstract classes
+- Extend behavior without changing existing code
+```typescript
+// ✅ Good - Extensible
+interface RankingStrategy {
+  rank(candidates: Candidate[]): Promise<Ranking[]>;
+}
+
+class AIRankingStrategy implements RankingStrategy {
+  async rank(candidates: Candidate[]): Promise<Ranking[]> {
+    return await claudeAPI.rank(candidates);
+  }
+}
+
+class RuleBasedRankingStrategy implements RankingStrategy {
+  async rank(candidates: Candidate[]): Promise<Ranking[]> {
+    // Rule-based logic
+  }
+}
+
+class RankingService {
+  constructor(private strategy: RankingStrategy) {}
+  
+  async rankCandidates(candidates: Candidate[]) {
+    return await this.strategy.rank(candidates);
+  }
+}
+
+// ❌ Bad - Modification required for new ranking methods
+class RankingService {
+  async rankCandidates(candidates: Candidate[], method: string) {
+    if (method === 'ai') {
+      return await claudeAPI.rank(candidates);
+    } else if (method === 'rules') {
+      // rule logic
+    }
+    // Need to modify this function for every new method
+  }
+}
+```
+
+### Liskov Substitution Principle (LSP)
+- Subtypes must be substitutable for their base types
+- Don't break parent class contracts
+```typescript
+// ✅ Good - Proper substitution
+abstract class CVGenerator {
+  abstract generate(candidate: Candidate): Promise<string>;
+}
+
+class ClaudeGenerator extends CVGenerator {
+  async generate(candidate: Candidate): Promise<string> {
+    return await claudeAPI.generate(candidate);
+  }
+}
+
+class TemplateGenerator extends CVGenerator {
+  async generate(candidate: Candidate): Promise<string> {
+    return this.fillTemplate(candidate);
+  }
+}
+
+// Can use either without breaking
+const generator: CVGenerator = new ClaudeGenerator();
+const cv = await generator.generate(candidate);
+
+// ❌ Bad - Breaks contract
+class BrokenGenerator extends CVGenerator {
+  async generate(candidate: Candidate): Promise<string> {
+    throw new Error('Not implemented'); // Breaks parent contract
+  }
+}
+```
+
+### Interface Segregation Principle (ISP)
+- Don't force clients to depend on interfaces they don't use
+- Many small, specific interfaces > one large interface
+```typescript
+// ✅ Good - Segregated interfaces
+interface CVGenerator {
+  generateCV(candidate: Candidate): Promise<string>;
+}
+
+interface CandidateRanker {
+  rankCandidates(candidates: Candidate[]): Promise<Ranking[]>;
+}
+
+interface InterviewScheduler {
+  scheduleInterview(candidate: Candidate, date: Date): Promise<Interview>;
+}
+
+class RecruitmentService implements CVGenerator, CandidateRanker {
+  async generateCV(candidate: Candidate): Promise<string> { }
+  async rankCandidates(candidates: Candidate[]): Promise<Ranking[]> { }
+  // Don't need to implement scheduleInterview if not needed
+}
+
+// ❌ Bad - Fat interface
+interface RecruitmentOperations {
+  generateCV(candidate: Candidate): Promise<string>;
+  rankCandidates(candidates: Candidate[]): Promise<Ranking[]>;
+  scheduleInterview(candidate: Candidate, date: Date): Promise<Interview>;
+  sendEmail(to: string, content: string): Promise<void>;
+  exportToExcel(data: any): Promise<Buffer>;
+}
+
+// Forced to implement everything even if not needed
+class SimpleService implements RecruitmentOperations {
+  async generateCV() { }
+  async rankCandidates() { }
+  async scheduleInterview() { throw new Error('Not supported'); }
+  async sendEmail() { throw new Error('Not supported'); }
+  async exportToExcel() { throw new Error('Not supported'); }
+}
+```
+
+### Dependency Inversion Principle (DIP)
+- Depend on abstractions, not concretions
+- High-level modules shouldn't depend on low-level modules
+```typescript
+// ✅ Good - Depends on abstraction
+interface CVStorage {
+  save(cv: CV): Promise<void>;
+  findById(id: string): Promise<CV | null>;
+}
+
+class PrismaCVStorage implements CVStorage {
+  async save(cv: CV): Promise<void> {
+    await prisma.cV.create({ data: cv });
+  }
+  
+  async findById(id: string): Promise<CV | null> {
+    return await prisma.cV.findUnique({ where: { id } });
+  }
+}
+
+class CVService {
+  constructor(private storage: CVStorage) {} // Depends on interface
+  
+  async saveCV(cv: CV): Promise<void> {
+    await this.storage.save(cv);
+  }
+}
+
+// Easy to swap implementations
+const cvService = new CVService(new PrismaCVStorage());
+
+// ❌ Bad - Depends on concrete implementation
+class CVService {
+  private prisma = new PrismaClient(); // Direct dependency
+  
+  async saveCV(cv: CV): Promise<void> {
+    await this.prisma.cV.create({ data: cv }); // Tightly coupled
+  }
+}
+```
+
+### Practical Application Rules
+
+1. **Controllers** - Only handle HTTP
+```typescript
+export async function createCandidate(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await candidateService.create(req.body); // Delegate to service
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+```
+
+2. **Services** - Business logic, orchestration
+```typescript
+class CandidateService {
+  constructor(
+    private storage: CandidateStorage,
+    private cvGenerator: CVGenerator,
+    private notifier: Notifier
+  ) {}
+  
+  async createWithCV(data: CandidateInput): Promise<CandidateWithCV> {
+    const candidate = await this.storage.save(data);
+    const cv = await this.cvGenerator.generate(candidate);
+    await this.notifier.notify(candidate.email);
+    return { candidate, cv };
+  }
+}
+```
+
+3. **Keep functions small** - One level of abstraction
+```typescript
+// ✅ Good
+async function processCandidate(data: CandidateInput) {
+  const candidate = await createCandidate(data);
+  const cv = await generateCV(candidate);
+  const ranking = await rankCandidate(candidate);
+  return { candidate, cv, ranking };
+}
+
+// ❌ Bad - Multiple levels mixed
+async function processCandidate(data: CandidateInput) {
+  const candidate = await prisma.candidate.create({ data });
+  const prompt = `Generate CV for ${data.firstName}...`;
+  const message = await anthropic.messages.create({ ... });
+  const cv = message.content[0].text;
+  // Too many details in one function
+}
+```
+
+4. **Avoid flag arguments** - Split into separate functions
+```typescript
+// ✅ Good
+async function createDraftCandidate(data: CandidateInput) { }
+async function createPublishedCandidate(data: CandidateInput) { }
+
+// ❌ Bad
+async function createCandidate(data: CandidateInput, isDraft: boolean) {
+  if (isDraft) {
+    // draft logic
+  } else {
+    // published logic
+  }
+}
+```
