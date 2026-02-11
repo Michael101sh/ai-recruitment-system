@@ -1,0 +1,64 @@
+import { useCallback, useEffect } from 'react';
+
+import type { Candidate } from '../types';
+
+interface CVModalProps {
+  candidate: Candidate | null;
+  onClose: () => void;
+}
+
+export const CVModal: React.FC<CVModalProps> = ({ candidate, onClose }) => {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  if (!candidate) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`CV for ${candidate.firstName} ${candidate.lastName}`}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-lg font-semibold text-gray-800">
+            CV - {candidate.firstName} {candidate.lastName}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-gray-500 hover:text-gray-700 rounded-md"
+            aria-label="Close modal"
+            tabIndex={0}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto">
+          <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
+            {candidate.generatedCV}
+          </pre>
+        </div>
+      </div>
+    </div>
+  );
+};
