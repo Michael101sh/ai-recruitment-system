@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { logger } from '../utils/logger';
-import type { RankingResult } from '../types';
+import type { RankingResult, GeneratedCandidateProfile } from '../types';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error('ANTHROPIC_API_KEY is required');
@@ -12,9 +12,76 @@ const anthropic = new Anthropic({
 });
 
 /**
- * Generates a professional CV in Hebrew using Claude API
+ * Generates realistic candidate profiles using Claude API
+ * @param count - Number of candidate profiles to generate
+ * @returns Array of generated candidate profiles
+ * @throws {Error} If Claude API call fails or response parsing fails
+ */
+export const generateCandidateProfiles = async (
+  count: number
+): Promise<GeneratedCandidateProfile[]> => {
+  const prompt = `Generate ${count} realistic and diverse fictional software industry candidate profiles.
+Each candidate MUST be clearly different in quality, experience level, and skill relevance so that
+when they are later ranked for a software engineering position, the results are meaningful and spread
+across the full scoring range.
+
+Return a JSON array (no markdown, no code fences, no extra text) with this exact structure:
+[
+  {
+    "firstName": "John",
+    "lastName": "Smith",
+    "email": "john.smith@email.com",
+    "phone": "+1-555-123-4567",
+    "yearsOfExp": 5,
+    "skills": ["TypeScript", "React", "Node.js", "PostgreSQL"]
+  }
+]
+
+Rules:
+- Generate exactly ${count} unique candidates — every name, email, and skill set must be different
+- Use realistic English names with diverse backgrounds
+- Email should be based on the candidate's name
+- CRITICAL — create a deliberate quality spread across all ${count} candidates:
+  * Include at least one strong candidate (8+ years, highly relevant modern skills)
+  * Include at least one weak/poor-fit candidate (0-1 years, or irrelevant/outdated skills)
+  * Distribute the rest across the middle range
+- yearsOfExp: integer between 0 and 20, deliberately varied (don't cluster around one number)
+- skills: 3-8 technical skills per candidate, with deliberate variety in relevance:
+  * Strong candidates: modern, in-demand skills (TypeScript, React, Node.js, AWS, Docker, etc.)
+  * Weak candidates: outdated or unrelated skills (COBOL, Flash, manual testing only, etc.)
+  * Middle candidates: a mix of relevant and less relevant skills
+- Include a mix of frontend, backend, fullstack, DevOps, and data profiles
+- No two candidates should have the same skill set
+- All text must be in English
+
+Return ONLY valid JSON. No markdown formatting, no code blocks, no additional text.`;
+
+  logger.info(`Generating ${count} candidate profiles`);
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const textBlock = message.content.find((block) => block.type === 'text');
+  if (!textBlock || textBlock.type !== 'text') {
+    throw new Error('No text content received from Claude API');
+  }
+
+  try {
+    const profiles: GeneratedCandidateProfile[] = JSON.parse(textBlock.text);
+    return profiles;
+  } catch (parseError) {
+    logger.error('Failed to parse Claude candidate profiles response', textBlock.text);
+    throw new Error('Failed to parse candidate profiles from Claude API');
+  }
+};
+
+/**
+ * Generates a professional CV in English using Claude API
  * @param candidateData - The candidate's core information
- * @returns The generated CV content as a string in Hebrew
+ * @returns The generated CV content as a string in English
  * @throws {Error} If Claude API call fails
  */
 export const generateCV = async (candidateData: {
@@ -23,22 +90,22 @@ export const generateCV = async (candidateData: {
   yearsOfExp: number;
   skills: string[];
 }): Promise<string> => {
-  const prompt = `צור קורות חיים מקצועיים בעברית עבור המועמד הבא.
-עצב אותם בצורה נקייה ומובנית עם חלקים ברורים.
+  const prompt = `Create a professional CV/resume in English for the following candidate.
+Format it in a clean, structured manner with clear sections.
 
-פרטי המועמד:
-- שם: ${candidateData.firstName} ${candidateData.lastName}
-- שנות ניסיון: ${candidateData.yearsOfExp}
-- כישורים: ${candidateData.skills.join(', ')}
+Candidate Information:
+- Name: ${candidateData.firstName} ${candidateData.lastName}
+- Years of Experience: ${candidateData.yearsOfExp}
+- Skills: ${candidateData.skills.join(', ')}
 
-אנא צור קורות חיים מלאים ומקצועיים הכוללים:
-1. פרטים אישיים
-2. תקציר מקצועי
-3. כישורים (מסווגים לפי קטגוריה)
-4. ניסיון תעסוקתי (צור רשומות מציאותיות בהתבסס על הכישורים ושנות הניסיון)
-5. השכלה (צור רשומות מתאימות בהתבסס על הפרופיל)
+Generate a complete, professional CV with the following sections:
+1. Contact Information
+2. Professional Summary
+3. Skills (categorized if possible)
+4. Professional Experience (generate realistic entries based on the skills and years of experience)
+5. Education (generate appropriate entries based on the profile)
 
-הקורות חיים צריכים להיות מפורטים, מקצועיים ומוכנים לשליחה למשרות.`;
+Make it detailed, professional, and ready for job applications. All content must be in English.`;
 
   logger.info(`Generating CV for ${candidateData.firstName} ${candidateData.lastName}`);
 

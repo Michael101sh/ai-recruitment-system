@@ -2,9 +2,8 @@ import axios from 'axios';
 
 import type {
   ApiResponse,
+  BatchGenerationResult,
   Candidate,
-  CandidateInput,
-  CVGenerationResult,
   InterviewListResponse,
   Ranking,
 } from '../types';
@@ -14,8 +13,11 @@ const api = axios.create({
 });
 
 export const candidateApi = {
-  create: async (data: CandidateInput): Promise<CVGenerationResult> => {
-    const response = await api.post<ApiResponse<CVGenerationResult>>('/candidates', data);
+  generate: async (count: number): Promise<BatchGenerationResult> => {
+    const response = await api.post<ApiResponse<BatchGenerationResult>>(
+      '/candidates/generate',
+      { count }
+    );
     return response.data.data;
   },
 

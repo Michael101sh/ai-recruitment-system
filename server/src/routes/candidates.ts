@@ -1,12 +1,12 @@
 import { Router } from 'express';
 
-import { createCandidateWithCV, getAllCandidates } from '../controllers/candidateController';
+import { generateCandidatesWithCVs, getAllCandidates } from '../controllers/candidateController';
 import { validateBody } from '../middleware/validation';
-import { CandidateSchema } from '../types';
+import { GenerateCandidatesSchema } from '../types';
 
 const router = Router();
 
-router.post('/', validateBody(CandidateSchema), createCandidateWithCV);
+router.post('/generate', validateBody(GenerateCandidatesSchema), generateCandidatesWithCVs);
 router.get('/', getAllCandidates);
 
 export default router;

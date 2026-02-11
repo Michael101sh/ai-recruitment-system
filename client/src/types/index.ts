@@ -53,6 +53,17 @@ export interface CVGenerationResult {
   content: string;
 }
 
+// ── Batch Generation ─────────────────────────────────────────────────
+
+export interface BatchGenerationResult {
+  generated: number;
+  candidates: Array<{
+    candidateId: string;
+    name: string;
+    cvId: string;
+  }>;
+}
+
 // ── Ranking Types ────────────────────────────────────────────────────
 
 export interface Ranking {

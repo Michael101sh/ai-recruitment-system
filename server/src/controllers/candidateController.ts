@@ -1,68 +1,80 @@
 import type { Request, Response, NextFunction } from 'express';
 
 import { prisma } from '../services/prismaService';
-import { generateCV } from '../services/claudeService';
-import type { CandidateInput, CVGenerationResult } from '../types';
+import { generateCandidateProfiles, generateCV } from '../services/claudeService';
+import { logger } from '../utils/logger';
+import type { GenerateCandidatesInput, BatchGenerationResult } from '../types';
 
 /**
- * Creates a new candidate with skills, generates a CV using Claude AI,
- * saves it to the database, and returns the generation result
+ * Uses Claude AI to generate candidate profiles and CVs in bulk.
+ * No manual input needed - AI creates realistic candidates from scratch.
  */
-export const createCandidateWithCV = async (
+export const generateCandidatesWithCVs = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const data: CandidateInput = req.body;
+    const { count }: GenerateCandidatesInput = req.body;
 
-    const candidate = await prisma.candidate.create({
-      data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        yearsOfExp: data.yearsOfExp,
-        skills: {
-          create: data.skills.map((skillName) => ({
-            skill: {
-              connectOrCreate: {
-                where: { name: skillName },
-                create: { name: skillName, category: 'technical' },
+    // Step 1: Ask Claude to generate fictional candidate profiles
+    const profiles = await generateCandidateProfiles(count);
+
+    logger.info(`Generated ${profiles.length} candidate profiles, creating records...`);
+
+    // Step 2: For each profile, create the candidate in DB and generate a CV
+    const results: BatchGenerationResult['candidates'] = [];
+
+    for (const profile of profiles) {
+      const candidate = await prisma.candidate.create({
+        data: {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone,
+          yearsOfExp: profile.yearsOfExp,
+          skills: {
+            create: profile.skills.map((skillName) => ({
+              skill: {
+                connectOrCreate: {
+                  where: { name: skillName },
+                  create: { name: skillName, category: 'technical' },
+                },
               },
-            },
-          })),
+            })),
+          },
         },
-      },
-      include: {
-        skills: { include: { skill: true } },
-      },
-    });
+      });
 
-    // Generate CV using Claude AI
-    const cvContent = await generateCV({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      yearsOfExp: data.yearsOfExp,
-      skills: data.skills,
-    });
+      // Generate a full CV for this candidate
+      const cvContent = await generateCV({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        yearsOfExp: profile.yearsOfExp,
+        skills: profile.skills,
+      });
 
-    // Save CV to database
-    const cv = await prisma.cV.create({
-      data: {
+      const cv = await prisma.cV.create({
+        data: {
+          candidateId: candidate.id,
+          content: cvContent,
+          generatedBy: 'claude-sonnet-4',
+        },
+      });
+
+      results.push({
         candidateId: candidate.id,
-        content: cvContent,
-        generatedBy: 'claude-sonnet-4',
-      },
-    });
+        name: `${profile.firstName} ${profile.lastName}`,
+        cvId: cv.id,
+      });
+    }
 
-    const result: CVGenerationResult = {
-      candidateId: candidate.id,
-      cvId: cv.id,
-      content: cv.content,
+    const batchResult: BatchGenerationResult = {
+      generated: results.length,
+      candidates: results,
     };
 
-    res.status(201).json({ data: result });
+    res.status(201).json({ data: batchResult });
   } catch (error) {
     next(error);
   }

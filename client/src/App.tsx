@@ -1,26 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { CandidateForm } from './components/CandidateForm';
-import { CVDisplay } from './components/CVDisplay';
+import { GenerateCandidates } from './components/GenerateCandidates';
 import { CandidateList } from './components/CandidateList';
 import { RankingDashboard } from './components/RankingDashboard';
 import { candidateApi } from './services/api';
 import { cn } from './utils/cn';
-import type { Candidate, CandidateInput } from './types';
+import type { Candidate, BatchGenerationResult } from './types';
 
-type Tab = 'add' | 'candidates' | 'rankings';
+type Tab = 'generate' | 'candidates' | 'rankings';
 
 const TABS: Array<{ id: Tab; label: string }> = [
-  { id: 'add', label: 'Add Candidate' },
+  { id: 'generate', label: 'Generate Candidates' },
   { id: 'candidates', label: 'All Candidates' },
   { id: 'rankings', label: 'Rankings' },
 ];
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('add');
+  const [activeTab, setActiveTab] = useState<Tab>('generate');
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [latestCV, setLatestCV] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -49,22 +47,22 @@ const App: React.FC = () => {
     }
   }, [error, success]);
 
-  const handleCreateCandidate = useCallback(async (data: CandidateInput) => {
-    setIsCreating(true);
+  const handleGenerate = useCallback(async (count: number): Promise<BatchGenerationResult> => {
+    setIsGenerating(true);
     setError(null);
-    setLatestCV(null);
     try {
-      const result = await candidateApi.create(data);
-      setLatestCV(result.content);
-      setSuccess('Candidate created and CV generated successfully!');
-      // Refresh the candidates list in the background
+      const result = await candidateApi.generate(count);
+      setSuccess(`Successfully generated ${result.generated} candidates with CVs!`);
+      // Refresh candidates list in the background
       const updated = await candidateApi.getAll();
       setCandidates(updated);
+      return result;
     } catch (err) {
-      setError('Failed to create candidate. Please try again.');
-      console.error('Error creating candidate:', err);
+      setError('Failed to generate candidates. Please try again.');
+      console.error('Error generating candidates:', err);
+      throw err;
     } finally {
-      setIsCreating(false);
+      setIsGenerating(false);
     }
   }, []);
 
@@ -82,7 +80,7 @@ const App: React.FC = () => {
             AI Recruitment System
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Generate CVs and rank candidates with AI
+            Generate candidates, CVs, and rank them with AI
           </p>
         </div>
       </header>
@@ -126,15 +124,12 @@ const App: React.FC = () => {
         )}
 
         <div
-          id="panel-add"
+          id="panel-generate"
           role="tabpanel"
-          aria-labelledby="tab-add"
-          className={activeTab === 'add' ? '' : 'hidden'}
+          aria-labelledby="tab-generate"
+          className={activeTab === 'generate' ? '' : 'hidden'}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <CandidateForm onSubmit={handleCreateCandidate} isLoading={isCreating} />
-            <CVDisplay cv={latestCV} isLoading={isCreating} />
-          </div>
+          <GenerateCandidates onGenerate={handleGenerate} isLoading={isGenerating} />
         </div>
 
         <div

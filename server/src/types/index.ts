@@ -13,12 +13,38 @@ export const CandidateSchema = z.object({
 
 export type CandidateInput = z.infer<typeof CandidateSchema>;
 
+// ── Batch Generation Schemas ─────────────────────────────────────────
+
+export const GenerateCandidatesSchema = z.object({
+  count: z.number().int().min(1, 'Must generate at least 1 candidate').max(10, 'Maximum 10 candidates at once'),
+});
+
+export type GenerateCandidatesInput = z.infer<typeof GenerateCandidatesSchema>;
+
+export interface GeneratedCandidateProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  yearsOfExp: number;
+  skills: string[];
+}
+
 // ── CV Generation Result ─────────────────────────────────────────────
 
 export interface CVGenerationResult {
   candidateId: string;
   cvId: string;
   content: string;
+}
+
+export interface BatchGenerationResult {
+  generated: number;
+  candidates: Array<{
+    candidateId: string;
+    name: string;
+    cvId: string;
+  }>;
 }
 
 // ── Ranking Result from AI ───────────────────────────────────────────
