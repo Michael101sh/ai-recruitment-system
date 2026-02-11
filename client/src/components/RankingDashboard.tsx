@@ -4,6 +4,7 @@ import VirtualList from './VirtualList';
 import { cn } from '../utils/cn';
 import { getApiErrorMessage } from '../utils/apiError';
 import { useInterviewList, useRankAll } from '../hooks/useRankings';
+import { useAppStore } from '../store/useAppStore';
 import type { Ranking } from '../types';
 
 /** Medal icons for top 3 */
@@ -111,7 +112,7 @@ interface RankingDashboardProps {
 
 export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingComplete, totalCandidates: totalCandidatesInSystem }) => {
   const [criteria, setCriteria] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const setError = useAppStore((s) => s.setError);
 
   const { data: interviewList, isLoading, error: queryError } = useInterviewList();
   const rankMutation = useRankAll(setError);
@@ -120,7 +121,7 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
     if (queryError) {
       setError(getApiErrorMessage(queryError, 'Failed to load interview list. Please try again.'));
     }
-  }, [queryError]);
+  }, [queryError, setError]);
 
   const handleRankAll = () => {
     setError(null);
@@ -154,15 +155,6 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
 
   return (
     <div className="flex flex-col h-full gap-3">
-      {error && (
-        <div className="flex-shrink-0 flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl animate-fade-in" role="alert">
-          <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-          </svg>
-          <p className="text-sm font-medium">{error}</p>
-        </div>
-      )}
-
       {/* ─── Compact Action Bar ─── */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2">
         <input

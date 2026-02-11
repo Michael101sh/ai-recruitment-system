@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 
 import { GenerateCandidates } from './components/GenerateCandidates';
 import { CandidateList } from './components/CandidateList';
 import { RankingDashboard } from './components/RankingDashboard';
+import { NotificationToasts } from './components/NotificationToasts';
 import { useCandidates, useGenerateCandidates } from './hooks/useCandidates';
 import { getApiErrorMessage } from './utils/apiError';
+import { useAppStore } from './store/useAppStore';
 import { cn } from './utils/cn';
-
-type Tab = 'generate' | 'candidates' | 'rankings';
+import type { Tab } from './store/useAppStore';
 
 const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode; description: string }> = [
   {
@@ -26,7 +27,7 @@ const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode; description: 
     description: 'View all profiles',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
       </svg>
     ),
   },
@@ -43,13 +44,17 @@ const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode; description: 
 ];
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('generate');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const activeTab = useAppStore((s) => s.activeTab);
+  const setActiveTab = useAppStore((s) => s.setActiveTab);
+  const setError = useAppStore((s) => s.setError);
+  const setSuccess = useAppStore((s) => s.setSuccess);
 
   const { data: candidates = [], refetch: refetchCandidates, error: candidatesError } = useCandidates();
   const generateMutation = useGenerateCandidates(
-    (result) => setSuccess(`Successfully generated ${result.generated} candidates with CVs!`),
+    (result) => {
+      setSuccess(`Successfully generated ${result.generated} candidates with CVs!`);
+      setActiveTab('candidates', { clearNotifications: false });
+    },
     setError,
   );
 
@@ -57,35 +62,21 @@ const App: React.FC = () => {
     if (candidatesError) {
       setError(getApiErrorMessage(candidatesError, 'Failed to load candidates. Please try again.'));
     }
-  }, [candidatesError]);
-
-  useEffect(() => {
-    if (error || success) {
-      const timer = setTimeout(() => {
-        setError(null);
-        setSuccess(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error, success]);
+  }, [candidatesError, setError]);
 
   const handleGenerate = useCallback(
     async (count: number) => {
       setError(null);
       return generateMutation.mutateAsync(count);
     },
-    [generateMutation],
+    [generateMutation, setError],
   );
-
-  const handleTabChange = useCallback((tab: Tab) => {
-    setActiveTab(tab);
-    setError(null);
-    setSuccess(null);
-  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* ─── Header ─── */}
       <header className="relative overflow-hidden bg-gradient-to-br from-violet-700 via-purple-600 to-indigo-600 flex-shrink-0">
+        {/* Decorative background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-purple-400/10 blur-3xl" />
@@ -99,13 +90,16 @@ const App: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.841m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">AI Recruitment System</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              AI Recruitment System
+            </h1>
           </div>
           <p className="text-purple-200 text-sm ml-[52px]">
             Generate candidate profiles, CVs, and intelligent rankings — powered by Claude AI
           </p>
         </div>
 
+        {/* ─── Tab Navigation ─── */}
         <nav className="relative max-w-7xl mx-auto px-6" aria-label="Main navigation">
           <div className="flex gap-1" role="tablist">
             {TABS.map((tab) => (
@@ -115,13 +109,18 @@ const App: React.FC = () => {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 aria-controls={`panel-${tab.id}`}
-                onClick={() => handleTabChange(tab.id)}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   'group flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl transition-all duration-200',
-                  activeTab === tab.id ? 'bg-white text-violet-700 shadow-sm' : 'text-white hover:bg-white/15'
+                  activeTab === tab.id
+                    ? 'bg-white text-violet-700 shadow-sm'
+                    : 'text-white hover:bg-white/15'
                 )}
               >
-                <span className={cn('transition-colors duration-200', activeTab === tab.id ? 'text-violet-500' : 'text-white')}>
+                <span className={cn(
+                  'transition-colors duration-200',
+                  activeTab === tab.id ? 'text-violet-500' : 'text-white'
+                )}>
                   {tab.icon}
                 </span>
                 <span>{tab.label}</span>
@@ -131,59 +130,55 @@ const App: React.FC = () => {
         </nav>
       </header>
 
+      {/* ─── Main Content ─── */}
       <main className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-6 py-8 overflow-hidden">
-          {error && (
-            <div className="mb-6 flex-shrink-0 flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl animate-fade-in" role="alert">
-              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-red-100">
-                <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium">{error}</p>
-            </div>
-          )}
+        <NotificationToasts />
 
-          {success && (
-            <div className="mb-6 flex-shrink-0 flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl animate-fade-in" role="status">
-              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-emerald-100">
-                <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium">{success}</p>
-            </div>
-          )}
+        <div
+          id="panel-generate"
+          role="tabpanel"
+          aria-labelledby="tab-generate"
+          className={activeTab === 'generate' ? 'flex-1 overflow-y-auto animate-fade-in' : 'hidden'}
+        >
+          <GenerateCandidates
+            onGenerate={handleGenerate}
+            isLoading={generateMutation.isPending}
+          />
+        </div>
 
-          <div
-            id="panel-generate"
-            role="tabpanel"
-            className={activeTab === 'generate' ? 'flex-1 overflow-y-auto animate-fade-in' : 'hidden'}
-          >
-            <GenerateCandidates onGenerate={handleGenerate} isLoading={generateMutation.isPending} />
-          </div>
+        <div
+          id="panel-candidates"
+          role="tabpanel"
+          aria-labelledby="tab-candidates"
+          className={activeTab === 'candidates' ? 'flex-1 flex flex-col overflow-hidden animate-fade-in' : 'hidden'}
+        >
+          <CandidateList
+            candidates={candidates}
+            onRefresh={refetchCandidates}
+          />
+        </div>
 
-          <div
-            id="panel-candidates"
-            role="tabpanel"
-            className={activeTab === 'candidates' ? 'flex-1 flex flex-col overflow-hidden animate-fade-in' : 'hidden'}
-          >
-            <CandidateList candidates={candidates} onRefresh={refetchCandidates} />
-          </div>
-
-          <div
-            id="panel-rankings"
-            role="tabpanel"
-            className={activeTab === 'rankings' ? 'flex-1 flex flex-col overflow-hidden animate-fade-in' : 'hidden'}
-          >
-            <RankingDashboard onRankingComplete={refetchCandidates} totalCandidates={candidates.length} />
-          </div>
+        <div
+          id="panel-rankings"
+          role="tabpanel"
+          aria-labelledby="tab-rankings"
+          className={activeTab === 'rankings' ? 'flex-1 flex flex-col overflow-hidden animate-fade-in' : 'hidden'}
+        >
+          <RankingDashboard
+            onRankingComplete={refetchCandidates}
+            totalCandidates={candidates.length}
+          />
+        </div>
         </div>
       </main>
 
+      {/* ─── Footer ─── */}
       <footer className="flex-shrink-0 border-t border-gray-200/60 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <p className="text-xs text-gray-400">AI Recruitment System &middot; Powered by Claude AI</p>
+          <p className="text-xs text-gray-400">
+            AI Recruitment System &middot; Powered by Claude AI
+          </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs text-gray-400">System Online</span>
