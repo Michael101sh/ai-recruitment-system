@@ -1,18 +1,22 @@
 import { cn } from '../../utils/cn';
 import type { Ranking } from '../../types';
 
-/** Medal icons for top 3 */
+// Gold/silver/bronze inspired colors for top 3 positions
 const MEDAL_COLORS: Record<number, string> = {
   1: 'from-amber-400 to-yellow-500',
   2: 'from-gray-300 to-gray-400',
   3: 'from-orange-400 to-amber-600',
 };
 
+// Only top 3 positions get special medal labels
 const getMedalEmoji = (priority: number): string | null => {
   const map: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' };
   return map[priority] ?? null;
 };
 
+/**
+ * Maps score to color theme and label using standard grading thresholds
+ */
 const getScoreConfig = (score: number) => {
   if (score >= 80) return { bg: 'bg-emerald-500', ring: 'ring-emerald-200', text: 'text-emerald-700', label: 'Excellent' };
   if (score >= 60) return { bg: 'bg-blue-500', ring: 'ring-blue-200', text: 'text-blue-700', label: 'Good' };
@@ -32,7 +36,8 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   variant,
 }) => {
   const config = getScoreConfig(ranking.score);
-  const position = index + 1;
+  const position = index + 1; // Convert 0-based index to 1-based position
+  // Medals only shown for "approved" variant (top interview candidates)
   const medal = variant === 'approved' ? getMedalEmoji(position) : null;
   const medalGradient = variant === 'approved' ? MEDAL_COLORS[position] : null;
 
@@ -41,6 +46,7 @@ export const RankingCard: React.FC<RankingCardProps> = ({
       className={cn(
         'group relative glass-card-hover p-4 animate-fade-in',
       )}
+      // Stagger animation: 60ms delay per item for cascading effect
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
     >
       <div className="flex items-start gap-3.5">

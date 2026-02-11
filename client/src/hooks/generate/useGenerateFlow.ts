@@ -31,6 +31,7 @@ export const useGenerateFlow = (
     setStepIndex(0);
     setIsGenerating(true);
 
+    // Cycle through step messages every 3s to show progress during long-running generation
     const interval = setInterval(() => {
       setStepIndex((prev) => (prev + 1) % STEP_MESSAGES.length);
     }, 3000);
@@ -39,11 +40,13 @@ export const useGenerateFlow = (
       const batchResult = await onGenerate(count);
       setResult(batchResult);
     } finally {
+      // Always clear interval and reset state, even on error
       clearInterval(interval);
       setIsGenerating(false);
     }
   }, [count, onGenerate]);
 
+  // Fallback chain ensures we always have a valid message
   const stepMessage = STEP_MESSAGES[stepIndex] ?? STEP_MESSAGES[0] ?? 'Processing...';
 
   return {

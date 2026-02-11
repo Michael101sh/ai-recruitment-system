@@ -23,11 +23,13 @@ export const sortCandidates = (candidates: Candidate[], sort: SortOption): Candi
   sorted.sort((a, b) => {
     switch (sort) {
       case 'score-desc': {
+        // Unranked candidates (-1) sort to bottom when descending
         const sa = a.rankings[0]?.score ?? -1;
         const sb = b.rankings[0]?.score ?? -1;
         return sb - sa;
       }
       case 'score-asc': {
+        // Unranked candidates (-1) sort to bottom when ascending
         const sa = a.rankings[0]?.score ?? -1;
         const sb = b.rankings[0]?.score ?? -1;
         return sa - sb;

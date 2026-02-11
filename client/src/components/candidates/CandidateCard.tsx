@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { cn } from '../../utils/cn';
 import type { Candidate } from '../../types';
 
+// Cycle through gradients based on index for visual variety
 const AVATAR_GRADIENTS = [
   'from-violet-500 to-purple-600',
   'from-sky-500 to-blue-600',
@@ -15,11 +16,17 @@ const AVATAR_GRADIENTS = [
   'from-fuchsia-500 to-purple-600',
 ];
 
+/**
+ * Rankings are ordered by rankedAt DESC, so [0] is always the most recent
+ */
 const getLatestScore = (candidate: Candidate): number | null => {
   if (candidate.rankings.length === 0) return null;
   return candidate.rankings[0]?.score ?? null;
 };
 
+/**
+ * Maps score to color theme and label using standard grading thresholds
+ */
 const getScoreConfig = (score: number) => {
   if (score >= 80) return { bg: 'bg-emerald-500', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700', label: 'Excellent' };
   if (score >= 60) return { bg: 'bg-blue-500', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700', label: 'Good' };
@@ -45,6 +52,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   const score = getLatestScore(candidate);
   const scoreConfig = score !== null ? getScoreConfig(score) : null;
   const latestCv = candidate.cvs?.[0];
+  // Modulo ensures gradient cycles through array regardless of list size
   const gradient = AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length];
 
   return (

@@ -56,7 +56,7 @@ export const rankAllCandidates = async (
       );
 
       const retryRankings = await rankCandidates(candidateData, criteria);
-      // Merge: use retry results for any IDs missing from the first run
+      // Merge strategy: add only missing candidates from retry, preserving first-run scores for others
       for (const r of retryRankings) {
         if (candidateIdSet.has(r.id) && !rankedIds.has(r.id)) {
           aiRankings.push(r);
