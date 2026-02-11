@@ -3,88 +3,128 @@ import type { Candidate } from '../types';
 
 interface CandidateListProps {
   candidates: Candidate[];
-  selectedIds: string[];
-  onToggleSelect: (id: string) => void;
-  onViewCV: (candidate: Candidate) => void;
+  onRefresh: () => void;
 }
+
+/**
+ * Returns the latest ranking score for a candidate, or null if unranked
+ */
+const getLatestScore = (candidate: Candidate): number | null => {
+  if (candidate.rankings.length === 0) return null;
+  return candidate.rankings[0]?.score ?? null;
+};
+
+/**
+ * Returns a Tailwind badge style based on the ranking score
+ */
+const getScoreBadgeStyle = (score: number): string => {
+  if (score >= 80) return 'bg-green-100 text-green-800';
+  if (score >= 50) return 'bg-yellow-100 text-yellow-800';
+  return 'bg-red-100 text-red-800';
+};
 
 export const CandidateList: React.FC<CandidateListProps> = ({
   candidates,
-  selectedIds,
-  onToggleSelect,
-  onViewCV,
+  onRefresh,
 }) => {
   if (candidates.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        No candidates yet. Add one using the form above.
+      <div className="p-6 bg-white rounded-lg shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">All Candidates</h2>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            aria-label="Refresh candidates list"
+          >
+            Refresh
+          </button>
+        </div>
+        <p className="text-gray-500 text-center py-8">
+          No candidates yet. Add one using the form.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-800">
-        Candidates ({candidates.length})
-      </h2>
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-800">
+          All Candidates ({candidates.length})
+        </h2>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+          aria-label="Refresh candidates list"
+        >
+          Refresh
+        </button>
+      </div>
 
-      <div className="grid gap-4">
-        {candidates.map((candidate) => {
-          const isSelected = selectedIds.includes(candidate.id);
-          return (
-            <div
-              key={candidate.id}
-              className={cn(
-                'p-4 bg-white rounded-lg shadow-sm border-2 transition-colors',
-                isSelected ? 'border-blue-500 bg-blue-50' : 'border-transparent'
-              )}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => onToggleSelect(candidate.id)}
-                    className="mt-1 h-4 w-4 text-blue-600 rounded"
-                    aria-label={`Select ${candidate.firstName} ${candidate.lastName}`}
-                  />
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left" aria-label="Candidates table">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="py-3 px-2 text-sm font-medium text-gray-500">Name</th>
+              <th className="py-3 px-2 text-sm font-medium text-gray-500">Email</th>
+              <th className="py-3 px-2 text-sm font-medium text-gray-500">Experience</th>
+              <th className="py-3 px-2 text-sm font-medium text-gray-500">Skills</th>
+              <th className="py-3 px-2 text-sm font-medium text-gray-500">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {candidates.map((candidate) => {
+              const score = getLatestScore(candidate);
+              return (
+                <tr
+                  key={candidate.id}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="py-3 px-2">
+                    <span className="font-medium text-gray-900">
                       {candidate.firstName} {candidate.lastName}
-                    </h3>
-                    <p className="text-sm text-gray-500">{candidate.email}</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {candidate.yearsOfExp} years of experience
-                    </p>
-                    {candidate.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {candidate.skills.map((cs) => (
-                          <span
-                            key={cs.skillId}
-                            className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full"
-                          >
-                            {cs.skill.name}
-                          </span>
-                        ))}
-                      </div>
+                    </span>
+                  </td>
+                  <td className="py-3 px-2 text-sm text-gray-600">
+                    {candidate.email}
+                  </td>
+                  <td className="py-3 px-2 text-sm text-gray-600">
+                    {candidate.yearsOfExp} years
+                  </td>
+                  <td className="py-3 px-2">
+                    <div className="flex flex-wrap gap-1">
+                      {candidate.skills.map((cs) => (
+                        <span
+                          key={cs.skillId}
+                          className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full"
+                        >
+                          {cs.skill.name}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-3 px-2">
+                    {score !== null ? (
+                      <span
+                        className={cn(
+                          'px-2 py-1 text-xs font-semibold rounded-full',
+                          getScoreBadgeStyle(score)
+                        )}
+                      >
+                        {score}/100
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Unranked</span>
                     )}
-                  </div>
-                </div>
-
-                {candidate.cvs.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onViewCV(candidate)}
-                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-                    aria-label={`View CV for ${candidate.firstName} ${candidate.lastName}`}
-                  >
-                    View CV
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

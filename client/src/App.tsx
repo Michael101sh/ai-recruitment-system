@@ -1,23 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { CandidateForm } from './components/CandidateForm';
+import { CVDisplay } from './components/CVDisplay';
 import { CandidateList } from './components/CandidateList';
-import { RankingPanel } from './components/RankingPanel';
-import { CVModal } from './components/CVModal';
-import { candidateApi, rankingApi } from './services/api';
-import type { Candidate, CandidateInput, Ranking } from './types';
+import { RankingDashboard } from './components/RankingDashboard';
+import { candidateApi } from './services/api';
+import { cn } from './utils/cn';
+import type { Candidate, CandidateInput } from './types';
+
+type Tab = 'add' | 'candidates' | 'rankings';
+
+const TABS: Array<{ id: Tab; label: string }> = [
+  { id: 'add', label: 'Add Candidate' },
+  { id: 'candidates', label: 'All Candidates' },
+  { id: 'rankings', label: 'Rankings' },
+];
 
 const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<Tab>('add');
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [rankings, setRankings] = useState<Ranking[]>([]);
-  const [cvCandidate, setCvCandidate] = useState<Candidate | null>(null);
+  const [latestCV, setLatestCV] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [isRanking, setIsRanking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const fetchCandidates = useCallback(async () => {
+  const handleFetchCandidates = useCallback(async () => {
     try {
       const data = await candidateApi.getAll();
       setCandidates(data);
@@ -28,8 +35,8 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchCandidates();
-  }, [fetchCandidates]);
+    handleFetchCandidates();
+  }, [handleFetchCandidates]);
 
   // Auto-dismiss notifications after 5 seconds
   useEffect(() => {
@@ -45,10 +52,14 @@ const App: React.FC = () => {
   const handleCreateCandidate = useCallback(async (data: CandidateInput) => {
     setIsCreating(true);
     setError(null);
+    setLatestCV(null);
     try {
-      await candidateApi.create(data);
+      const result = await candidateApi.create(data);
+      setLatestCV(result.content);
       setSuccess('Candidate created and CV generated successfully!');
-      await candidateApi.getAll().then(setCandidates);
+      // Refresh the candidates list in the background
+      const updated = await candidateApi.getAll();
+      setCandidates(updated);
     } catch (err) {
       setError('Failed to create candidate. Please try again.');
       console.error('Error creating candidate:', err);
@@ -57,39 +68,11 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleToggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((selectedId) => selectedId !== id)
-        : [...prev, id]
-    );
-  }, []);
-
-  const handleViewCV = useCallback((candidate: Candidate) => {
-    setCvCandidate(candidate);
-  }, []);
-
-  const handleCloseCV = useCallback(() => {
-    setCvCandidate(null);
-  }, []);
-
-  const handleRankCandidates = useCallback(async (jobDescription: string) => {
-    setIsRanking(true);
+  const handleTabChange = useCallback((tab: Tab) => {
+    setActiveTab(tab);
     setError(null);
-    try {
-      const results = await rankingApi.rankCandidates({
-        jobDescription,
-        candidateIds: selectedIds,
-      });
-      setRankings(results);
-      setSuccess('Candidates ranked successfully!');
-    } catch (err) {
-      setError('Failed to rank candidates. Please try again.');
-      console.error('Error ranking candidates:', err);
-    } finally {
-      setIsRanking(false);
-    }
-  }, [selectedIds]);
+    setSuccess(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,6 +87,31 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      <nav className="bg-white border-b" aria-label="Main navigation">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-1" role="tablist">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
+                onClick={() => handleTabChange(tab.id)}
+                className={cn(
+                  'px-5 py-3 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === tab.id
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
       <main className="max-w-7xl mx-auto px-4 py-8">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg" role="alert">
@@ -117,29 +125,36 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
+        <div
+          id="panel-add"
+          role="tabpanel"
+          aria-labelledby="tab-add"
+          className={activeTab === 'add' ? '' : 'hidden'}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <CandidateForm onSubmit={handleCreateCandidate} isLoading={isCreating} />
-            <CandidateList
-              candidates={candidates}
-              selectedIds={selectedIds}
-              onToggleSelect={handleToggleSelect}
-              onViewCV={handleViewCV}
-            />
-          </div>
-
-          <div>
-            <RankingPanel
-              selectedCandidateIds={selectedIds}
-              rankings={rankings}
-              isLoading={isRanking}
-              onRank={handleRankCandidates}
-            />
+            <CVDisplay cv={latestCV} isLoading={isCreating} />
           </div>
         </div>
-      </main>
 
-      <CVModal candidate={cvCandidate} onClose={handleCloseCV} />
+        <div
+          id="panel-candidates"
+          role="tabpanel"
+          aria-labelledby="tab-candidates"
+          className={activeTab === 'candidates' ? '' : 'hidden'}
+        >
+          <CandidateList candidates={candidates} onRefresh={handleFetchCandidates} />
+        </div>
+
+        <div
+          id="panel-rankings"
+          role="tabpanel"
+          aria-labelledby="tab-rankings"
+          className={activeTab === 'rankings' ? '' : 'hidden'}
+        >
+          <RankingDashboard />
+        </div>
+      </main>
     </div>
   );
 };

@@ -4,8 +4,9 @@ import type {
   ApiResponse,
   Candidate,
   CandidateInput,
+  CVGenerationResult,
+  InterviewListResponse,
   Ranking,
-  RankCandidatesInput,
 } from '../types';
 
 const api = axios.create({
@@ -13,8 +14,8 @@ const api = axios.create({
 });
 
 export const candidateApi = {
-  create: async (data: CandidateInput): Promise<Candidate> => {
-    const response = await api.post<ApiResponse<Candidate>>('/candidates', data);
+  create: async (data: CandidateInput): Promise<CVGenerationResult> => {
+    const response = await api.post<ApiResponse<CVGenerationResult>>('/candidates', data);
     return response.data.data;
   },
 
@@ -22,21 +23,20 @@ export const candidateApi = {
     const response = await api.get<ApiResponse<Candidate[]>>('/candidates');
     return response.data.data;
   },
-
-  getById: async (id: string): Promise<Candidate> => {
-    const response = await api.get<ApiResponse<Candidate>>(`/candidates/${id}`);
-    return response.data.data;
-  },
 };
 
 export const rankingApi = {
-  rankCandidates: async (data: RankCandidatesInput): Promise<Ranking[]> => {
-    const response = await api.post<ApiResponse<Ranking[]>>('/rankings', data);
+  rankAll: async (criteria?: string): Promise<Ranking[]> => {
+    const response = await api.post<ApiResponse<Ranking[]>>('/rankings', {
+      criteria,
+    });
     return response.data.data;
   },
 
-  getAll: async (): Promise<Ranking[]> => {
-    const response = await api.get<ApiResponse<Ranking[]>>('/rankings');
+  getInterviewList: async (): Promise<InterviewListResponse> => {
+    const response = await api.get<ApiResponse<InterviewListResponse>>(
+      '/rankings/interview-list'
+    );
     return response.data.data;
   },
 };

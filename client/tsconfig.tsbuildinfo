@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/cvmodal.tsx","./src/components/candidateform.tsx","./src/components/candidatelist.tsx","./src/components/rankingpanel.tsx","./src/services/api.ts","./src/types/index.ts","./src/utils/cn.ts","./vite-env.d.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/cvdisplay.tsx","./src/components/candidateform.tsx","./src/components/candidatelist.tsx","./src/components/rankingdashboard.tsx","./src/services/api.ts","./src/types/index.ts","./src/utils/cn.ts","./vite-env.d.ts"],"version":"5.9.3"}

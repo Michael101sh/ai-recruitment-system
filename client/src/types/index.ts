@@ -31,14 +31,6 @@ export interface CV {
   createdAt: string;
 }
 
-export interface Interview {
-  id: string;
-  candidateId: string;
-  scheduledFor: string | null;
-  status: string;
-  notes: string | null;
-}
-
 export interface Candidate {
   id: string;
   firstName: string;
@@ -51,7 +43,14 @@ export interface Candidate {
   skills: CandidateSkill[];
   cvs: CV[];
   rankings: Ranking[];
-  interviews: Interview[];
+}
+
+// ── CV Generation Result ─────────────────────────────────────────────
+
+export interface CVGenerationResult {
+  candidateId: string;
+  cvId: string;
+  content: string;
 }
 
 // ── Ranking Types ────────────────────────────────────────────────────
@@ -68,9 +67,9 @@ export interface Ranking {
   candidate?: Candidate;
 }
 
-export interface RankCandidatesInput {
-  jobDescription: string;
-  candidateIds: string[];
+export interface InterviewListResponse {
+  shouldInterview: Ranking[];
+  shouldNotInterview: Ranking[];
 }
 
 // ── API Response Types ───────────────────────────────────────────────
