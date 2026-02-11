@@ -26,11 +26,20 @@ export const generateCandidatesWithCVs = async (
     const results: BatchGenerationResult['candidates'] = [];
 
     for (const profile of profiles) {
+      // Ensure email is unique — add a random suffix if it already exists
+      let email = profile.email;
+      const existingCandidate = await prisma.candidate.findUnique({ where: { email } });
+      if (existingCandidate) {
+        const suffix = Math.random().toString(36).substring(2, 7);
+        const [localPart, domain] = email.split('@');
+        email = `${localPart}+${suffix}@${domain}`;
+      }
+
       const candidate = await prisma.candidate.create({
         data: {
           firstName: profile.firstName,
           lastName: profile.lastName,
-          email: profile.email,
+          email,
           phone: profile.phone,
           yearsOfExp: profile.yearsOfExp,
           skills: {

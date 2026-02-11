@@ -40,7 +40,7 @@ Return a JSON array (no markdown, no code fences, no extra text) with this exact
 Rules:
 - Generate exactly ${count} unique candidates — every name, email, and skill set must be different
 - Use realistic English names with diverse backgrounds
-- Email should be based on the candidate's name
+- Email MUST be globally unique: use the format firstname.lastname.XXXX@email.com where XXXX is a random 4-digit number (e.g. john.smith.3847@email.com). NEVER use plain firstname.lastname@email.com
 - CRITICAL — create a deliberate quality spread across all ${count} candidates:
   * Include at least one strong candidate (8+ years, highly relevant modern skills)
   * Include at least one weak/poor-fit candidate (0-1 years, or irrelevant/outdated skills)
