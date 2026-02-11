@@ -18,10 +18,9 @@ model Candidate {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  cvs        CV[]
-  skills     CandidateSkill[]
-  rankings   Ranking[]
-  interviews Interview[]
+  cvs      CV[]
+  skills   CandidateSkill[]
+  rankings Ranking[]
 
   @@index([email])
   @@index([createdAt])
@@ -82,18 +81,4 @@ model Ranking {
   @@index([candidateId])
   @@index([score])
   @@index([priority])
-}
-
-/// Tracks interview scheduling and status for candidates
-model Interview {
-  id           String    @id @default(uuid())
-  candidateId  String
-  scheduledFor DateTime?
-  status       String    @default("pending")
-  notes        String?   @db.Text
-
-  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-
-  @@index([candidateId])
-  @@index([status])
 }

@@ -101,6 +101,76 @@
   }
 }
 
+/* ─── CV Document Styles ─── */
+.cv-document {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.cv-document h1 {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #5b21b6;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #ddd6fe;
+}
+
+.cv-document h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cv-document h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.cv-document p {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.cv-document ul {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+  padding-left: 1.25rem;
+}
+
+.cv-document li {
+  margin-top: 0.15rem;
+  margin-bottom: 0.15rem;
+}
+
+.cv-document strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.cv-document em {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.cv-document hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

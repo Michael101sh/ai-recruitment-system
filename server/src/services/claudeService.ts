@@ -105,14 +105,47 @@ IMPORTANT: The CV quality must authentically reflect the candidate's experience 
 - If the skills are outdated or niche, the CV should reflect that realistically (e.g., legacy companies, limited modern tech exposure).
 - Do NOT make a weak candidate look strong. The CV should honestly represent the profile.
 
-Generate a complete CV with the following sections:
-1. Contact Information
-2. Professional Summary
-3. Skills (categorized if possible)
-4. Professional Experience (realistic entries matching the experience level and skills)
-5. Education (appropriate for the profile)
+Generate the CV using this EXACT markdown structure and formatting — every CV must follow this template consistently:
 
-All content must be in English.`;
+# [Full Name]
+
+## Contact Information
+- 📧 [email]
+- 📱 [phone number]
+- 📍 [city, country]
+- 🔗 [linkedin URL]
+
+## Professional Summary
+[2-3 sentence summary]
+
+## Skills
+**[Category]:** [comma-separated skills]
+**[Category]:** [comma-separated skills]
+
+## Professional Experience
+
+### [Job Title] — [Company Name]
+*[Start Date] – [End Date]*
+- [Achievement/responsibility]
+- [Achievement/responsibility]
+
+(Repeat for each role)
+
+## Education
+
+### [Degree] — [University Name]
+*[Year]*
+
+---
+
+CRITICAL formatting rules:
+- Always use the emoji icons shown above for Contact Information (📧 📱 📍 🔗)
+- Use ## for section headers, ### for job titles and degrees
+- Use bullet points (- ) for lists
+- Use bold (**text**) for skill categories
+- Use italic (*text*) for date ranges
+- Separate sections with blank lines
+- All content must be in English`;
 
   logger.info(`Generating CV for ${candidateData.firstName} ${candidateData.lastName}`);
 

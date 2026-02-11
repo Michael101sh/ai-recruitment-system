@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import { cn } from '../utils/cn';
 import type { Candidate } from '../types';
@@ -201,22 +202,39 @@ export const CandidateList: React.FC<CandidateListProps> = ({
 
               {/* Expanded CV Content */}
               {isExpanded && latestCv && (
-                <div className="border-t border-gray-100 bg-gray-50/50 p-5 animate-scale-in">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-4 h-4 text-violet-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Generated CV
-                    </span>
+                <div className="border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white p-5 animate-scale-in">
+                  {/* CV Header bar */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">
+                        Curriculum Vitae
+                      </span>
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+                        {latestCv.generatedBy}
+                      </span>
+                    </div>
                     <span className="text-xs text-gray-400">
-                      &middot; {latestCv.generatedBy}
+                      {new Date(latestCv.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </span>
                   </div>
-                  <div className="bg-white rounded-xl border border-gray-200 p-5 max-h-80 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
-                      {latestCv.content}
-                    </pre>
+
+                  {/* CV Document */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm max-h-[32rem] overflow-y-auto">
+                    {/* Document top accent */}
+                    <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-t-xl" />
+
+                    <div className="px-8 py-6 cv-document">
+                      <ReactMarkdown>{latestCv.content}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               )}
