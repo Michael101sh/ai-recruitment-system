@@ -72,9 +72,9 @@ export const CandidateList: React.FC<CandidateListProps> = ({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col h-full">
       {/* Header bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex-shrink-0 flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-gray-900">All Candidates</h2>
           <span className="badge bg-violet-100 text-violet-700">{candidates.length}</span>
@@ -88,7 +88,8 @@ export const CandidateList: React.FC<CandidateListProps> = ({
       </div>
 
       {/* Candidate Cards */}
-      <div className="grid gap-4">
+      <div className="flex-1 overflow-y-auto pr-1">
+        <div className="space-y-4">
         {candidates.map((candidate, index) => {
           const score = getLatestScore(candidate);
           const scoreConfig = score !== null ? getScoreConfig(score) : null;
@@ -241,6 +242,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

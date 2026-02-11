@@ -171,166 +171,134 @@ export const RankingDashboard: React.FC<RankingDashboardProps> = ({ onRankingCom
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full gap-3">
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl animate-fade-in" role="alert">
-          <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-red-100">
-            <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-            </svg>
-          </div>
+        <div className="flex-shrink-0 flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl animate-fade-in" role="alert">
+          <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}
 
-      {/* ─── Action Bar ─── */}
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-100 text-violet-600">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Rank Candidates</h2>
-            <p className="text-sm text-gray-500">AI evaluates all candidates and decides interview eligibility</p>
-          </div>
-        </div>
+      {/* ─── Compact Action Bar ─── */}
+      <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={criteria}
+          onChange={(e) => setCriteria(e.target.value)}
+          className="input-field flex-1 !py-2 text-sm"
+          placeholder="Criteria, e.g. Senior Full-Stack Engineer, React & Node.js"
+          aria-label="Ranking criteria"
+        />
+        <button
+          type="button"
+          onClick={handleRankAll}
+          disabled={isRanking}
+          className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap text-sm !py-2"
+          aria-label="Rank all candidates"
+        >
+          {isRanking ? (
+            <>
+              <span className="animate-spin inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" />
+              Ranking...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+              </svg>
+              Rank All
+            </>
+          )}
+        </button>
+      </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={criteria}
-            onChange={(e) => setCriteria(e.target.value)}
-            className="input-field flex-1"
-            placeholder="e.g. Senior Full-Stack Engineer, React & Node.js"
-            aria-label="Ranking criteria"
-          />
-          <button
-            type="button"
-            onClick={handleRankAll}
-            disabled={isRanking}
-            className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap"
-            aria-label="Rank all candidates"
-          >
-            {isRanking ? (
-              <>
-                <span className="animate-spin inline-block h-4 w-4 border-2 border-white/30 border-t-white rounded-full" />
-                Ranking...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                </svg>
-                Rank All Candidates
-              </>
-            )}
-          </button>
+      {/* ─── Criteria + Stats in one row ─── */}
+      {totalCandidates > 0 && (
+        <div className="flex-shrink-0 flex items-center gap-4 text-sm flex-wrap">
+          <span className="text-gray-500">
+            <span className="font-semibold text-gray-700">Criteria:</span>{' '}
+            {rankedCriteria}
+          </span>
+          {rankedAt && (
+            <span className="text-gray-400">
+              {new Date(rankedAt).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+              })}
+            </span>
+          )}
+          <span className="ml-auto flex items-center gap-3">
+            <span className="font-bold text-gray-900">{totalCandidates} ranked</span>
+            <span className="font-bold text-emerald-600">{totalApproved} interview</span>
+            <span className="font-bold text-red-500">{totalRejected} rejected</span>
+          </span>
+        </div>
+      )}
+
+      {/* ─── Column Titles (fixed) ─── */}
+      <div className="flex-shrink-0 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <h3 className="text-sm font-bold text-gray-900">Should Interview</h3>
+          {totalApproved > 0 && (
+            <span className="badge bg-emerald-100 text-emerald-700 text-[10px]">{totalApproved}</span>
+          )}
+        </div>
+        <div className="hidden lg:flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-red-500" />
+          <h3 className="text-sm font-bold text-gray-900">Not Recommended</h3>
+          {totalRejected > 0 && (
+            <span className="badge bg-red-100 text-red-600 text-[10px]">{totalRejected}</span>
+          )}
         </div>
       </div>
 
-      {/* ─── Ranking Info + Stats ─── */}
-      {totalCandidates > 0 && (
-        <>
-          {/* Criteria banner */}
-          <div className="flex items-center gap-3 p-4 bg-violet-50 border border-violet-200 rounded-2xl animate-fade-in">
-            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-violet-100">
-              <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-violet-800">
-                <span className="font-semibold">Criteria:</span>{' '}
-                <span className="font-medium">{rankedCriteria}</span>
-              </p>
-              {rankedAt && (
-                <p className="text-xs text-violet-500 mt-0.5">
-                  Ranked on {new Date(rankedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+      {/* ─── Scrollable Lists ─── */}
+      <div className="flex-1 overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Should Interview */}
+          <div>
+            {!interviewList || interviewList.shouldInterview.length === 0 ? (
+              <div className="glass-card p-8 text-center">
+                <p className="text-sm text-gray-500">No candidates recommended for interview yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {interviewList.shouldInterview.map((ranking, idx) => (
+                  <RankingCard key={ranking.id} ranking={ranking} index={idx} variant="approved" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Should Not Interview */}
+          <div>
+            {/* Show title on mobile only (since it's hidden in the fixed header on mobile) */}
+            <div className="flex lg:hidden items-center gap-2.5 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Not Recommended</h3>
+              {totalRejected > 0 && (
+                <span className="badge bg-red-100 text-red-600">{totalRejected}</span>
               )}
             </div>
-          </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 animate-fade-in">
-            <div className="glass-card p-4 text-center">
-              <p className="text-2xl font-bold text-gray-900">{totalCandidates}</p>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Total Ranked</p>
-            </div>
-            <div className="glass-card p-4 text-center">
-              <p className="text-2xl font-bold text-emerald-600">{totalApproved}</p>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Interview</p>
-            </div>
-            <div className="glass-card p-4 text-center">
-              <p className="text-2xl font-bold text-red-500">{totalRejected}</p>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-0.5">Rejected</p>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ─── Two Columns ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Should Interview */}
-        <div>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900">Should Interview</h3>
-            {totalApproved > 0 && (
-              <span className="badge bg-emerald-100 text-emerald-700">{totalApproved}</span>
+            {!interviewList || interviewList.shouldNotInterview.length === 0 ? (
+              <div className="glass-card p-8 text-center">
+                <p className="text-sm text-gray-500">No rejected candidates.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {interviewList.shouldNotInterview.map((ranking, idx) => (
+                  <RankingCard key={ranking.id} ranking={ranking} index={idx} variant="rejected" />
+                ))}
+              </div>
             )}
           </div>
-
-          {!interviewList || interviewList.shouldInterview.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <p className="text-sm text-gray-500">No candidates recommended for interview yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {interviewList.shouldInterview.map((ranking, idx) => (
-                <RankingCard key={ranking.id} ranking={ranking} index={idx} variant="approved" />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Should Not Interview */}
-        <div>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900">Not Recommended</h3>
-            {totalRejected > 0 && (
-              <span className="badge bg-red-100 text-red-600">{totalRejected}</span>
-            )}
-          </div>
-
-          {!interviewList || interviewList.shouldNotInterview.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <p className="text-sm text-gray-500">No rejected candidates.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {interviewList.shouldNotInterview.map((ranking, idx) => (
-                <RankingCard key={ranking.id} ranking={ranking} index={idx} variant="rejected" />
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
