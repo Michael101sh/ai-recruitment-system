@@ -39,7 +39,7 @@ You are an expert in TypeScript, Node.js, Express.js, Prisma, PostgreSQL, React,
 - Wrap fetching logic in custom hooks (e.g., `useDashboardData`) to decouple UI from data fetching logic.
 - Always define and use TypeScript interfaces for the expected API responses.
 - Implement proper loading and error states using early returns for better readability.
-- Use `staleTime` and `cacheTime` configurations to optimize performance and minimize unnecessary network requests.
+- Use `staleTime` and `gcTime` configurations to optimize performance and minimize unnecessary network requests.
 
 ### Utilities
 - Lodash (when needed for complex data operations)
