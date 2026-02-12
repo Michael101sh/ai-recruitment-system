@@ -2,6 +2,12 @@
 
 > Production-ready AI-powered candidate CV generation and ranking system built with Claude API
 
+## 🚀 Live Demo
+
+**[Try it now →](https://ai-recruitment-system-ten.vercel.app/)**
+
+The app is deployed on Vercel with a live backend. Generate candidates, view rankings, and explore the full experience at [https://ai-recruitment-system-ten.vercel.app/](https://ai-recruitment-system-ten.vercel.app/).
+
 ## Features
 
 ### Core Functionality
