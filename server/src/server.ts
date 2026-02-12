@@ -15,6 +15,9 @@ import { logger } from './utils/logger';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy when behind Render/nginx - required for rate limiter to see real client IP
+app.set('trust proxy', 1);
+
 // ── Security ──────────────────────────────────────────────────────────
 // Helmet sets various HTTP headers to help protect the app.
 app.use(helmet());
