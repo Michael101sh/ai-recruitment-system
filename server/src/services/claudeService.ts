@@ -225,10 +225,111 @@ Return ONLY valid JSON. No markdown formatting, no code blocks, no additional te
   }
 
   try {
-    const rankings: RankingResult[] = JSON.parse(textBlock.text);
+    const rawText = textBlock.text.trim();
+
+    // Normalise common Claude formatting issues before parsing
+    let workingText = rawText;
+
+    // 1) If Claude wrapped the JSON in a ```json ... ``` fenced block, extract inner content
+    const fencedMatch = workingText.match(/```[\s\S]*?```/);
+    if (fencedMatch) {
+      const fenced = fencedMatch[0];
+      workingText = fenced
+        .replace(/```json/i, '')
+        .replace(/```/g, '')
+        .trim();
+      logger.warn('Claude ranking response contained fenced code block; extracted inner JSON.');
+    }
+
+    // 2) Try direct JSON parse first
+    const tryParse = (text: string): unknown | undefined => {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return undefined;
+      }
+    };
+
+    const directParse = tryParse(workingText);
+
+    if (directParse !== undefined) {
+      if (Array.isArray(directParse)) {
+        return directParse as RankingResult[];
+      }
+
+      // Sometimes Claude returns an object wrapper like { "results": [ ... ] } or { "rankings": [ ... ] }
+      if (
+        typeof directParse === 'object' &&
+        directParse !== null &&
+        ('results' in directParse || 'rankings' in directParse || 'candidates' in directParse)
+      ) {
+        const container = directParse as Record<string, unknown>;
+        const possibleArray =
+          (container.results as unknown) ??
+          (container.rankings as unknown) ??
+          (container.candidates as unknown);
+
+        if (Array.isArray(possibleArray)) {
+          logger.warn(
+            'Claude ranking response used an object wrapper; extracted array from known property.',
+          );
+          return possibleArray as RankingResult[];
+        }
+      }
+
+      logger.warn(
+        'Claude ranking response is valid JSON but not an array; attempting to extract array substring.',
+      );
+    }
+
+    // 3) Fallback: extract the first JSON array substring from the text
+    const arrayMatch = workingText.match(/\[[\s\S]*\]/);
+    if (!arrayMatch) {
+      logger.error(
+        'Claude ranking response did not contain a JSON array.',
+        workingText.slice(0, 2000),
+      );
+      throw new Error('Claude ranking response missing JSON array');
+    }
+
+    const extractedJson = arrayMatch[0];
+    const parsed = tryParse(extractedJson);
+
+    if (!parsed || !Array.isArray(parsed)) {
+      logger.error(
+        'Extracted Claude ranking JSON is not an array.',
+        extractedJson.slice(0, 2000),
+      );
+      throw new Error('Extracted Claude ranking JSON is not an array');
+    }
+
+    const rankings = parsed as RankingResult[];
     return rankings;
   } catch (parseError) {
-    logger.error('Failed to parse Claude ranking response', textBlock.text);
-    throw new Error('Failed to parse ranking results from Claude API');
+    logger.error(
+      'Failed to parse Claude ranking response; falling back to heuristic ranking.',
+      textBlock.text.slice(0, 2000),
+      parseError,
+    );
+
+    // Fallback: deterministic heuristic-based ranking so the API
+    // still returns useful data even when Claude output is malformed.
+    const heuristicRankings: RankingResult[] = candidates
+      .map((candidate) => {
+        // Simple heuristic: weight experience and skill count
+        const baseScore = candidate.experience * 4 + candidate.skills.length * 3;
+        const clampedScore = Math.max(1, Math.min(100, baseScore));
+
+        return {
+          id: candidate.id,
+          score: clampedScore,
+          shouldInterview: clampedScore >= 50,
+          reasoning:
+            'Heuristic ranking used because AI ranking response could not be parsed. Score is based on years of experience and number of skills.',
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return heuristicRankings;
   }
 };
